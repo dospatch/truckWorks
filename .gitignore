@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# Coverage
+coverage/
+.nyc_output/
