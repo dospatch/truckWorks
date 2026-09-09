@@ -1,0 +1,37 @@
+{
+  "name": "truck-works",
+  "version": "1.0.0",
+  "description": "BC Truck Works — Discord bot, server tools, documentation, and future web platform for the TruckWorks community.",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dospatch/truckWorks.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dospatch/truckWorks/issues"
+  },
+  "homepage": "https://github.com/dospatch/truckWorks#readme",
+  "dependencies": {
+    "@types/node": "^26.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vercel/analytics": "^2.0.1",
+    "next": "^16.3.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^7.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.4"
+  }
+}
