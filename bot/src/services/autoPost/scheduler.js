@@ -1,48 +1,102 @@
 const { postServerAd } = require("./serverAd");
+const {
+    postConvoyUpdate,
+    postVtcRecruitment,
+    postMaintenanceNotice,
+    postChangelogUpdate
+} = require("./autoPost");
 
-let serverAdTimer = null;
+const timers = new Map();
 
-function startAutoPostScheduler(client) {
-    const enabled =
-        String(process.env.SERVER_AD_ENABLED || "false").toLowerCase() === "true";
+function envTrue(name) {
+    return String(process.env[name] || "false").toLowerCase() === "true";
+}
 
-    if (!enabled) {
-        console.log("[AUTOPOST] Automatic server advertisements are disabled.");
+function intervalMs(name, fallbackHours) {
+    const hours = Number(process.env[name]) || fallbackHours;
+    return Math.max(hours, 0.1) * 60 * 60 * 1000;
+}
+
+function scheduleTask(name, client, enabledEnv, intervalEnv, fallbackHours, task) {
+    if (!envTrue(enabledEnv)) {
+        console.log(`[AUTOPOST] ${name} is disabled.`);
         return;
     }
 
-    const channelId = process.env.SERVER_AD_CHANNEL_ID;
-
-    if (!channelId) {
-        console.log("[AUTOPOST] Automatic server advertisements are enabled, but no channel is configured.");
-        return;
-    }
-
-    const intervalHours =
-        Number(process.env.SERVER_AD_INTERVAL_HOURS) || 24;
-
-    const intervalMs = intervalHours * 60 * 60 * 1000;
+    const intervalHours = Number(process.env[intervalEnv]) || fallbackHours;
 
     console.log(
-        `[AUTOPOST] Server advertisements enabled — every ${intervalHours} hour(s).`
+        `[AUTOPOST] ${name} enabled — every ${intervalHours} hour(s).`
     );
 
-    postServerAd(client).catch(error => {
-        console.error("[AUTOPOST] Initial server advertisement failed:", error);
+    task(client).catch(error => {
+        console.error(`[AUTOPOST] Initial ${name} failed:`, error);
     });
 
-    serverAdTimer = setInterval(() => {
-        postServerAd(client).catch(error => {
-            console.error("[AUTOPOST] Scheduled server advertisement failed:", error);
+    const timer = setInterval(() => {
+        task(client).catch(error => {
+            console.error(`[AUTOPOST] Scheduled ${name} failed:`, error);
         });
-    }, intervalMs);
+    }, intervalMs(intervalEnv, fallbackHours));
+
+    timers.set(name, timer);
+}
+
+function startAutoPostScheduler(client) {
+    stopAutoPostScheduler();
+
+    scheduleTask(
+        "Server advertisements",
+        client,
+        "SERVER_AD_ENABLED",
+        "SERVER_AD_INTERVAL_HOURS",
+        24,
+        postServerAd
+    );
+
+    scheduleTask(
+        "Convoy announcements",
+        client,
+        "CONVOY_AUTOPOST_ENABLED",
+        "CONVOY_AUTOPOST_INTERVAL_HOURS",
+        12,
+        postConvoyUpdate
+    );
+
+    scheduleTask(
+        "VTC recruitment",
+        client,
+        "VTC_AUTOPOST_ENABLED",
+        "VTC_AUTOPOST_INTERVAL_HOURS",
+        168,
+        postVtcRecruitment
+    );
+
+    scheduleTask(
+        "Changelog updates",
+        client,
+        "CHANGELOG_AUTOPOST_ENABLED",
+        "CHANGELOG_AUTOPOST_INTERVAL_HOURS",
+        24,
+        postChangelogUpdate
+    );
+
+    scheduleTask(
+        "Maintenance notices",
+        client,
+        "MAINTENANCE_AUTOPOST_ENABLED",
+        "MAINTENANCE_AUTOPOST_INTERVAL_HOURS",
+        168,
+        postMaintenanceNotice
+    );
 }
 
 function stopAutoPostScheduler() {
-    if (serverAdTimer) {
-        clearInterval(serverAdTimer);
-        serverAdTimer = null;
+    for (const timer of timers.values()) {
+        clearInterval(timer);
     }
+
+    timers.clear();
 }
 
 module.exports = {
