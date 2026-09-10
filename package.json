@@ -11,6 +11,8 @@
     "start": "npm --prefix bot start",
     "dev": "npm --prefix bot run dev",
     "changelog": "node scripts/update-changelog.js",
-    "update": "node scripts/update.js"
+    "update": "node scripts/update.js",
+    "changelog:discord": "node scripts/update-discord-changelog.js",
+    "changelog:update": "node scripts/update-changelog.js && node scripts/update-discord-changelog.js"
   }
 }

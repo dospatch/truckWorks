@@ -38,6 +38,9 @@ run("npm --prefix bot run deploy");
 console.log("\n📝 Updating CHANGELOG...");
 run("node scripts/update-changelog.js");
 
+console.log("\n📋 Updating Discord changelog embed...");
+run("node scripts/update-discord-changelog.js");
+
 console.log("\n📦 Updating project version...");
 
 try {

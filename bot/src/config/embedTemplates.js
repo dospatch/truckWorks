@@ -27,6 +27,16 @@ function makeEmbed({
 
 const templates = {
 
+    "changelog": () =>
+        makeEmbed({
+            emoji: "📋",
+            title: "BC TruckWorks Changelog",
+            description:
+                "Official BC TruckWorks updates, fixes, improvements, and announcements are posted here.\n\n" +
+                "The changelog is automatically updated when new project changes are released."
+        }),
+
+
     /* =====================================================
        🎫 COMMUNITY & EVENTS
     ===================================================== */
@@ -453,6 +463,7 @@ const channelTemplates = {
     "mod-ideas": "mod-ideas",
     "mod-testing": "mod-testing",
     "mod-changelogs": "mod-changelogs",
+    "changelog": "changelog",
 
     "truckworks-guide": "truckworks-guide",
     "getting-started": "getting-started",

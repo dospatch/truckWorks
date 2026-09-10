@@ -52,6 +52,7 @@ const SERVER_STRUCTURE = [
     {
         name: "SERVER NETWORK",
         channels: [
+            "changelog",
             "server-status",
             "server-events",
             "server-support",

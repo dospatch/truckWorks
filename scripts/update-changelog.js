@@ -9,54 +9,83 @@ function run(command) {
 }
 
 function escapeMarkdown(text) {
-    return text
+    return String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 }
 
-let commits = [];
+const file = "CHANGELOG.md";
+const today = new Date().toISOString().slice(0, 10);
 
-try {
-    const lastTag = run("git describe --tags --abbrev=0 2>/dev/null");
+let existing = "";
 
-    const log = run(
-        `git log ${lastTag}..HEAD --pretty=format:%s%x09%h`
-    );
-
-    commits = log
-        ? log.split("\n").map(line => {
-            const [subject, hash] = line.split("\t");
-            return { subject, hash };
-        })
-        : [];
-} catch {
-    try {
-        const log = run(
-            'git log -30 --pretty=format:%s%x09%h'
-        );
-
-        commits = log
-            ? log.split("\n").map(line => {
-                const [subject, hash] = line.split("\t");
-                return { subject, hash };
-            })
-            : [];
-    } catch {
-        commits = [];
-    }
+if (fs.existsSync(file)) {
+    existing = fs.readFileSync(file, "utf8");
 }
 
-const today = new Date().toISOString().slice(0, 10);
+if (!existing.trim()) {
+    existing =
+        "# 🚛 BC TruckWorks Changelog\n\n" +
+        "All notable changes to BC TruckWorks are documented here.\n\n" +
+        "---\n\n";
+}
+
+const existingHashes = new Set(
+    [...existing.matchAll(
+        /\(`([a-f0-9]{7,40})`\)/gi
+    )].map(match => match[1].toLowerCase())
+);
+
+let log = "";
+
+try {
+    log = run(
+        "git log -50 --pretty=format:%s%x09%h"
+    );
+} catch {
+    log = "";
+}
+
+const commits = log
+    ? log
+        .split("\n")
+        .map(line => {
+            const [subject, hash] =
+                line.split("\t");
+
+            return {
+                subject: String(subject || "").trim(),
+                hash: String(hash || "").trim()
+            };
+        })
+        .filter(commit =>
+            commit.subject &&
+            commit.hash
+        )
+    : [];
+
+const newCommits = commits.filter(commit =>
+    !existingHashes.has(
+        commit.hash.toLowerCase()
+    )
+);
+
+if (!newCommits.length) {
+    console.log(
+        `ℹ️ No new changelog commits detected for ${today}.`
+    );
+    process.exit(0);
+}
 
 const added = [];
 const fixed = [];
 const changed = [];
 const other = [];
 
-for (const commit of commits) {
-    const subject = commit.subject.trim();
-    const lower = subject.toLowerCase();
+for (const commit of newCommits) {
+    const lower =
+        commit.subject.toLowerCase();
 
     if (
         lower.startsWith("feat") ||
@@ -105,43 +134,31 @@ body += section("🐛 Fixed", fixed);
 body += section("🔧 Changed", changed);
 body += section("📝 Other", other);
 
-if (!body) {
-    body = "- No new changes detected.\n\n";
-}
-
 const entry =
     `## ${today}\n\n` +
     body +
     "---\n\n";
 
-const file = "CHANGELOG.md";
-
-let existing = "";
-
-if (fs.existsSync(file)) {
-    existing = fs.readFileSync(file, "utf8");
-}
-
-if (!existing.trim()) {
-    existing =
-        "# 🚛 BC TruckWorks Changelog\n\n" +
-        "All notable changes to BC TruckWorks are documented here.\n\n" +
-        "---\n\n";
-}
-
 const headerEnd = existing.indexOf("---");
 
 if (headerEnd !== -1) {
-    const header = existing.slice(0, headerEnd + 3).trimEnd();
-    const rest = existing.slice(headerEnd + 3).trimStart();
+    const header =
+        existing
+            .slice(0, headerEnd + 3)
+            .trimEnd();
 
-    const newContent =
+    const rest =
+        existing
+            .slice(headerEnd + 3)
+            .trimStart();
+
+    fs.writeFileSync(
+        file,
         header +
         "\n\n" +
         entry +
-        rest;
-
-    fs.writeFileSync(file, newContent);
+        rest
+    );
 } else {
     fs.writeFileSync(
         file,
@@ -151,4 +168,6 @@ if (headerEnd !== -1) {
     );
 }
 
-console.log(`✅ CHANGELOG.md updated for ${today}`);
+console.log(
+    `✅ CHANGELOG.md updated with ${newCommits.length} new commit(s).`
+);
