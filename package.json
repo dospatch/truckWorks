@@ -3,7 +3,7 @@
     "@vercel/analytics": "^2.0.1"
   },
   "name": "truckworks",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "scripts": {
     "bot:install": "npm --prefix bot install",
