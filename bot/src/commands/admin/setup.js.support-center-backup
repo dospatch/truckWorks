@@ -1,0 +1,100 @@
+const {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    MessageFlags
+} = require("discord.js");
+
+const {
+    setupTicketSystem
+} = require("../../utils/setupTickets");
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName("setup")
+        .setDescription(
+            "Configure TruckWorks Discord systems."
+        )
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ManageGuild
+        ),
+
+    async execute(interaction) {
+        try {
+            await interaction.deferReply({
+                flags: MessageFlags.Ephemeral
+            });
+
+            const result =
+                await setupTicketSystem(
+                    interaction.guild
+                );
+
+            const embed =
+                new EmbedBuilder()
+                    .setTitle(
+                        "🚛 TruckWorks Setup"
+                    )
+                    .setDescription(
+                        "The TruckWorks support system has been configured successfully."
+                    )
+                    .addFields(
+                        {
+                            name: "📁 Ticket Categories",
+                            value:
+                                result.createdCategories.length
+                                    ? result.createdCategories
+                                        .map(
+                                            name =>
+                                                `• ${name}`
+                                        )
+                                        .join("\n")
+                                    : "All required categories already exist."
+                        },
+                        {
+                            name: "🎫 Support Panel",
+                            value: `${result.panelChannel}`
+                        }
+                    )
+                    .setFooter({
+                        text:
+                            "TruckWorks • Server Setup"
+                    })
+                    .setTimestamp();
+
+            await interaction.editReply({
+                embeds: [embed]
+            });
+
+        } catch (error) {
+            console.error(
+                "❌ Setup error:",
+                error
+            );
+
+            try {
+                if (
+                    interaction.deferred ||
+                    interaction.replied
+                ) {
+                    await interaction.editReply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details."
+                    });
+                } else {
+                    await interaction.reply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details.",
+                        flags:
+                            MessageFlags.Ephemeral
+                    });
+                }
+            } catch (replyError) {
+                console.error(
+                    "❌ Could not respond to setup interaction:",
+                    replyError
+                );
+            }
+        }
+    }
+};

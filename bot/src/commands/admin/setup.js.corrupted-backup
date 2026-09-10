@@ -1,0 +1,465 @@
+const { ensureServerStructure } = require("../../utils/serverStructure");
+const { deployAllEmbedTemplates } = require("../../utils/embedDeployer");
+const { createSupportCenterEmbeds, createSupportCenterMenu } = require("../../config/ticketPanel");
+const {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    MessageFlags
+} = require("discord.js");
+
+const {
+    setupTicketSystem
+} = require("../../utils/setupTickets");
+
+
+
+/*
+ * ============================================================
+ * TRUCKWORKS SUPPORT CENTER
+ * ============================================================
+ */
+
+async function sendTruckWorksSupportCenter(channel) {
+    if (!channel) {
+        throw new Error("Support Center channel could not be resolved.");
+    }
+
+    const embeds =
+        createSupportCenterEmbeds();
+
+    const menu =
+        createSupportCenterMenu();
+
+    /*
+     * Remove previous bot-generated support panel messages
+     * so /setup can safely refresh the panel.
+     */
+    try {
+        const messages =
+            await channel.messages.fetch({
+                limit: 100
+            });
+
+        const oldPanels =
+            messages.filter(message =>
+                message.author.id === channel.client.user.id &&
+                message.embeds.some(embed =>
+                    String(embed.title || "")
+                        .includes("TRUCKWORKS SUPPORT CENTER")
+                )
+            );
+
+        for (const message of oldPanels.values()) {
+            await message.delete().catch(() => {});
+        }
+    } catch (error) {
+        console.warn(
+            "⚠️ Could not clean previous Support Center panel messages:",
+            error.message
+        );
+    }
+
+    /*
+     * Discord message content is limited to 2000 characters,
+     * so the Support Center is intentionally split into
+     * multiple embed messages.
+     */
+    for (const embed of embeds) {
+        await channel.send({
+            embeds: [embed]
+        });
+    }
+
+    /*
+     * Put the interactive menu on its own final message.
+     */
+    await channel.send({
+        content:
+            "🎫 **Select a support category below to open a private TruckWorks support ticket.**",
+        components: [menu]
+    });
+
+    console.log(
+        `✅ TruckWorks Support Center deployed in #${channel.name}`
+    );
+}
+
+module.exports = {
+    sendTruckWorksSupportCenter,
+    data: new SlashCommandBuilder()
+        .setName("setup")
+        .setDescription(
+            "Configure TruckWorks Discord systems."
+        )
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ManageGuild
+        ),
+
+    async execute(interaction) {
+
+        /*
+         * Acknowledge the interaction immediately.
+         *
+         * Full TruckWorks setup may create categories,
+         * channels, tickets, and embeds, so we defer before
+         * doing any Discord API work that could take time.
+         */
+
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral
+        });
+
+        let structureResults = {
+            categoriesCreated: 0,
+            categoriesExisting: 0,
+            channelsCreated: 0,
+            channelsExisting: 0,
+            channelsMoved: 0,
+            errors: []
+        };
+
+        let embedDeploymentResults = [];
+
+        let ticketResult = null;
+
+        /*
+         * ========================================================
+         * STEP 1 — SERVER STRUCTURE
+         * ========================================================
+         */
+
+        try {
+
+            structureResults =
+                await ensureServerStructure(
+                    interaction.guild
+                );
+
+            console.log(
+                "🚛 TruckWorks server structure configured."
+            );
+
+            console.log(
+                structureResults
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ TruckWorks server structure setup failed:",
+                error
+            );
+
+            structureResults.errors.push({
+                type: "structure",
+                error: error.message
+            });
+        }
+
+        /*
+         * ========================================================
+         * STEP 2 — TICKET SYSTEM
+         * ========================================================
+         */
+
+        try {
+
+            ticketResult =
+                await setupTicketSystem(
+                    interaction.guild
+                );
+
+            console.log(
+                "🎫 TruckWorks ticket system configured."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ TruckWorks ticket system setup failed:",
+                error
+            );
+
+            ticketResult = {
+                success: false,
+                error: error.message
+            };
+        }
+
+        /*
+         * ========================================================
+         * STEP 3 — EMBED DEPLOYMENT
+         * ========================================================
+         */
+
+        try {
+
+            embedDeploymentResults =
+                await deployAllEmbedTemplates(
+                    interaction.guild
+                );
+
+            console.log(
+                "🚛 TruckWorks embed deployment completed."
+            );
+
+            console.log(
+                embedDeploymentResults
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ TruckWorks embed deployment failed:",
+                error
+            );
+        }
+
+        /*
+         * ========================================================
+         * STEP 4 — SETUP SUMMARY
+         * ========================================================
+         */
+
+        const embedCreated =
+            embedDeploymentResults.filter(
+                result =>
+                    result.status === "created"
+            ).length;
+
+        const embedUpdated =
+            embedDeploymentResults.filter(
+                result =>
+                    result.status === "updated"
+            ).length;
+
+        const embedMissing =
+            embedDeploymentResults.filter(
+                result =>
+                    result.status === "missing"
+            ).length;
+
+        const embedErrors =
+            embedDeploymentResults.filter(
+                result =>
+                    result.status === "error"
+            ).length;
+
+        const setupEmbed =
+            new EmbedBuilder()
+                .setTitle(
+                    "🚛 TruckWorks Setup Complete"
+                )
+                .setDescription(
+                    "The TruckWorks server setup process has finished. Existing channels were preserved and missing infrastructure was created where possible."
+                )
+                .addFields(
+                    {
+                        name: "📁 Categories",
+                        value:
+                            `Created: **${structureResults.categoriesCreated}**
+` +
+                            `Existing: **${structureResults.categoriesExisting}**`,
+                        inline: true
+                    },
+                    {
+                        name: "📝 Channels",
+                        value:
+                            `Created: **${structureResults.channelsCreated}**
+` +
+                            `Existing: **${structureResults.channelsExisting}**
+` +
+                            `Moved: **${structureResults.channelsMoved}**`,
+                        inline: true
+                    },
+                    {
+                        name: "📌 Embeds",
+                        value:
+                            `Created: **${embedCreated}**
+` +
+                            `Updated: **${embedUpdated}**
+` +
+                            `Missing: **${embedMissing}**
+` +
+                            `Errors: **${embedErrors}**`,
+                        inline: true
+                    },
+                    {
+                        name: "🎫 Ticket System",
+                        value:
+                            ticketResult?.success === false
+                                ? `⚠️ Setup issue: ${ticketResult.error}`
+                                : "✅ Ticket system configured",
+                        inline: false
+                    },
+                    {
+                        name: "🚛 TruckWorks Systems",
+                        value:
+                            "✅ Community & Events
+" +
+                            "✅ Creator Center
+" +
+                            "✅ VTC Center
+" +
+                            "✅ Mod Center
+" +
+                            "✅ TruckWorks Information
+" +
+                            "✅ Server Network
+" +
+                            "✅ Welcome System
+" +
+                            "✅ Embed Template System",
+                        inline: false
+                    }
+                )
+                .setFooter({
+                    text:
+                        "TruckWorks • Server Setup"
+                })
+                .setTimestamp();
+
+        if (
+            structureResults.errors.length > 0 ||
+            embedErrors > 0
+        ) {
+            setupEmbed.setDescription(
+                "⚠️ TruckWorks setup completed with some warnings. Review the bot console for detailed errors."
+            );
+        } else {
+            setupEmbed.setDescription(
+                "The TruckWorks server setup completed successfully. Your configured categories, channels, ticket system, and embed templates are ready."
+            );
+        }
+
+        await interaction.editReply({
+            embeds: [setupEmbed]
+        });
+
+        console.log(
+            "=================================================="
+        );
+
+        console.log(
+            "🚛 TRUCKWORKS FULL SETUP COMPLETE"
+        );
+
+        console.log(
+            "=================================================="
+        );
+
+        console.log(
+            `📁 Categories created: ${structureResults.categoriesCreated}`
+        );
+
+        console.log(
+            `📝 Channels created: ${structureResults.channelsCreated}`
+        );
+
+        console.log(
+            `📝 Existing channels: ${structureResults.channelsExisting}`
+        );
+
+        console.log(
+            `📦 Embeds created: ${embedCreated}`
+        );
+
+        console.log(
+            `🔄 Embeds updated: ${embedUpdated}`
+        );
+
+        console.log(
+            `⚠️ Embed missing: ${embedMissing}`
+        );
+
+        console.log(
+            `❌ Errors: ${structureResults.errors.length + embedErrors}`
+        );
+
+        console.log(
+            "=================================================="
+        );
+    }
+};
+
+module.exports = {
+    sendTruckWorksSupportCenter,
+    data: new SlashCommandBuilder()
+        .setName("setup")
+        .setDescription(
+            "Configure TruckWorks Discord systems."
+        )
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ManageGuild
+        ),
+};
+
+            const embed =
+                new EmbedBuilder()
+                    .setTitle(
+                        "🚛 TruckWorks Setup"
+                    )
+                    .setDescription(
+                        "The TruckWorks support system has been configured successfully."
+                    )
+                    .addFields(
+                        {
+                            name: "📁 Ticket Categories",
+                            value:
+                                result.createdCategories.length
+                                    ? result.createdCategories
+                                        .map(
+                                            name =>
+                                                `• ${name}`
+                                        )
+                                        .join("\n")
+                                    : "All required categories already exist."
+                        },
+                        {
+                            name: "🎫 Support Panel",
+                            value: `${result.panelChannel}`
+                        }
+                    )
+                    .setFooter({
+                        text:
+                            "TruckWorks • Server Setup"
+                    })
+                    .setTimestamp();
+
+            await interaction.editReply({
+                embeds: [embed]
+            });
+
+        } catch (error) {
+            console.error(
+                "❌ Setup error:",
+                error
+            );
+
+            try {
+                if (
+                    interaction.deferred ||
+                    interaction.replied
+                ) {
+                    await interaction.editReply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details."
+                    });
+                } else {
+                    await interaction.reply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details.",
+                        flags:
+                            MessageFlags.Ephemeral
+                    });
+                }
+            } catch (replyError) {
+                console.error(
+                    "❌ Could not respond to setup interaction:",
+                    replyError
+                );
+            }
+        }
+    }
+};

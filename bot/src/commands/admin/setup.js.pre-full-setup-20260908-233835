@@ -1,0 +1,208 @@
+const { deployAllEmbedTemplates } = require("../../utils/embedDeployer");
+const { createSupportCenterEmbeds, createSupportCenterMenu } = require("../../config/ticketPanel");
+const {
+    SlashCommandBuilder,
+    PermissionFlagsBits,
+    EmbedBuilder,
+    MessageFlags
+} = require("discord.js");
+
+const {
+    setupTicketSystem
+} = require("../../utils/setupTickets");
+
+
+
+/*
+ * ============================================================
+ * TRUCKWORKS SUPPORT CENTER
+ * ============================================================
+ */
+
+async function sendTruckWorksSupportCenter(channel) {
+    if (!channel) {
+        throw new Error("Support Center channel could not be resolved.");
+    }
+
+    const embeds =
+        createSupportCenterEmbeds();
+
+    const menu =
+        createSupportCenterMenu();
+
+    /*
+     * Remove previous bot-generated support panel messages
+     * so /setup can safely refresh the panel.
+     */
+    try {
+        const messages =
+            await channel.messages.fetch({
+                limit: 100
+            });
+
+        const oldPanels =
+            messages.filter(message =>
+                message.author.id === channel.client.user.id &&
+                message.embeds.some(embed =>
+                    String(embed.title || "")
+                        .includes("TRUCKWORKS SUPPORT CENTER")
+                )
+            );
+
+        for (const message of oldPanels.values()) {
+            await message.delete().catch(() => {});
+        }
+    } catch (error) {
+        console.warn(
+            "⚠️ Could not clean previous Support Center panel messages:",
+            error.message
+        );
+    }
+
+    /*
+     * Discord message content is limited to 2000 characters,
+     * so the Support Center is intentionally split into
+     * multiple embed messages.
+     */
+    for (const embed of embeds) {
+        await channel.send({
+            embeds: [embed]
+        });
+    }
+
+    /*
+     * Put the interactive menu on its own final message.
+     */
+    await channel.send({
+        content:
+            "🎫 **Select a support category below to open a private TruckWorks support ticket.**",
+        components: [menu]
+    });
+
+    console.log(
+        `✅ TruckWorks Support Center deployed in #${channel.name}`
+    );
+}
+
+module.exports = {
+    sendTruckWorksSupportCenter,
+    data: new SlashCommandBuilder()
+        .setName("setup")
+        .setDescription(
+            "Configure TruckWorks Discord systems."
+        )
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ManageGuild
+        ),
+
+    async execute(interaction) {
+
+        /*
+         * 🚛 TruckWorks Embed Template Deployment
+         *
+         * /setup now deploys the configured TruckWorks
+         * channel embeds after performing the existing setup.
+         */
+
+        let embedDeploymentResults = [];
+
+        try {
+            embedDeploymentResults =
+                await deployAllEmbedTemplates(
+                    interaction.guild
+                );
+
+            console.log(
+                "🚛 TruckWorks embed deployment completed."
+            );
+
+            console.log(
+                embedDeploymentResults
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ TruckWorks embed deployment failed:",
+                error
+            );
+        }
+
+        try {
+            await interaction.deferReply({
+                flags: MessageFlags.Ephemeral
+            });
+
+            const result =
+                await setupTicketSystem(
+                    interaction.guild
+                );
+
+            const embed =
+                new EmbedBuilder()
+                    .setTitle(
+                        "🚛 TruckWorks Setup"
+                    )
+                    .setDescription(
+                        "The TruckWorks support system has been configured successfully."
+                    )
+                    .addFields(
+                        {
+                            name: "📁 Ticket Categories",
+                            value:
+                                result.createdCategories.length
+                                    ? result.createdCategories
+                                        .map(
+                                            name =>
+                                                `• ${name}`
+                                        )
+                                        .join("\n")
+                                    : "All required categories already exist."
+                        },
+                        {
+                            name: "🎫 Support Panel",
+                            value: `${result.panelChannel}`
+                        }
+                    )
+                    .setFooter({
+                        text:
+                            "TruckWorks • Server Setup"
+                    })
+                    .setTimestamp();
+
+            await interaction.editReply({
+                embeds: [embed]
+            });
+
+        } catch (error) {
+            console.error(
+                "❌ Setup error:",
+                error
+            );
+
+            try {
+                if (
+                    interaction.deferred ||
+                    interaction.replied
+                ) {
+                    await interaction.editReply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details."
+                    });
+                } else {
+                    await interaction.reply({
+                        content:
+                            "❌ TruckWorks setup failed. Check the bot console for details.",
+                        flags:
+                            MessageFlags.Ephemeral
+                    });
+                }
+            } catch (replyError) {
+                console.error(
+                    "❌ Could not respond to setup interaction:",
+                    replyError
+                );
+            }
+        }
+    }
+};

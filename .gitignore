@@ -36,3 +36,9 @@ out/
 # Coverage
 coverage/
 .nyc_output/
+
+# Local application backups
+bot/backups/
+**/*.backup
+**/*.backup-*
+**/*.before-*
