@@ -6,9 +6,10 @@ export function Navigation() {
       <div className="container nav">
         <Link href="/" className="brand">BC <span>TRUCK WORKS</span></Link>
         <nav className="navlinks">
-          <Link href="/#features">Platform</Link>
+          <Link href="/#platform">Platform</Link>
           <Link href="/servers">Servers</Link>
           <Link href="/vtc">VTC</Link>
+          <Link href="/dashboard/downloads">Downloads</Link>
           <Link href="/support">Support</Link>
         </nav>
         <div className="actions">
