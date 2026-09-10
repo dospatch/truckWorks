@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  },
+  "name": "truckworks",
+  "version": "1.0.1",
+  "private": true,
+  "scripts": {
+    "bot:install": "npm --prefix bot install",
+    "deploy": "npm --prefix bot run deploy",
+    "start": "npm --prefix bot start",
+    "dev": "npm --prefix bot run dev",
+    "changelog": "node scripts/update-changelog.js",
+    "update": "node scripts/update.js"
+  }
+}
