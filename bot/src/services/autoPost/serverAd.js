@@ -5,24 +5,13 @@ const {
     ButtonStyle
 } = require("discord.js");
 
+const embedChannelConfig = require("../embedChannelConfig");
+
 async function postServerAd(client) {
-    const channelId = process.env.SERVER_AD_CHANNEL_ID;
+    const config = embedChannelConfig.get("server_recruitment");
 
-    if (!channelId) {
-        console.log("[AUTOPOST] SERVER_AD_CHANNEL_ID is not configured.");
-        return;
-    }
-
-    const channel = await client.channels.fetch(channelId).catch(() => null);
-
-    if (!channel) {
-        console.error("[AUTOPOST] Could not find the configured server ad channel.");
-        return;
-    }
-
-    if (!channel.isTextBased()) {
-        console.error("[AUTOPOST] Configured server ad channel is not text based.");
-        return;
+    if (!config?.enabled || !Array.isArray(config.channelIds) || !config.channelIds.length) {
+        return 0;
     }
 
     const embed = new EmbedBuilder()
@@ -80,13 +69,27 @@ async function postServerAd(client) {
             .setURL("https://truck-works.vercel.app/dashboard/servers/add")
     );
 
-    await channel.send({
-        content: "🚨 **SERVER OWNERS — THIS ONE IS FOR YOU!** 🚨",
-        embeds: [embed],
-        components: [row]
-    });
+    let posted = 0;
 
-    console.log(`[AUTOPOST] Server recruitment advertisement posted in #${channel.name}.`);
+    for (const channelId of [...new Set(config.channelIds.filter(Boolean))]) {
+        const channel = await client.channels.fetch(channelId).catch(() => null);
+
+        if (!channel || !channel.isTextBased()) {
+            console.error(`[AUTOPOST] Invalid channel configured: ${channelId}`);
+            continue;
+        }
+
+        await channel.send({
+            content: "🚨 **SERVER OWNERS — THIS ONE IS FOR YOU!** 🚨",
+            embeds: [embed],
+            components: [row]
+        });
+
+        posted++;
+        console.log(`[AUTOPOST] Server recruitment advertisement posted in #${channel.name}.`);
+    }
+
+    return posted;
 }
 
 module.exports = {
