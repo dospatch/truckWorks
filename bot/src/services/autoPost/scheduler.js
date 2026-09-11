@@ -5,50 +5,62 @@ const {
     postMaintenanceNotice,
     postChangelogUpdate
 } = require("./autoPost");
+const embedChannelConfig = require("../embedChannelConfig");
 
 const timers = new Map();
 
-function envTrue(name) {
-    return String(process.env[name] || "false").toLowerCase() === "true";
+function intervalMs(envName, fallbackHours) {
+    const hours = Number(process.env[envName]);
+    const safeHours = Number.isFinite(hours) && hours > 0 ? hours : fallbackHours;
+    return safeHours * 60 * 60 * 1000;
 }
 
-function intervalMs(name, fallbackHours) {
-    const hours = Number(process.env[name]) || fallbackHours;
-    return Math.max(hours, 0.1) * 60 * 60 * 1000;
+function isConfigured(type) {
+    const config = embedChannelConfig.get(type);
+    return Boolean(config?.enabled && Array.isArray(config.channelIds) && config.channelIds.length);
 }
 
-function scheduleTask(name, client, enabledEnv, intervalEnv, fallbackHours, task) {
-    if (!envTrue(enabledEnv)) {
-        console.log(`[AUTOPOST] ${name} is disabled.`);
-        return;
-    }
+function scheduleTask(name, type, client, intervalEnv, fallbackHours, task) {
+    const run = async () => {
+        if (!isConfigured(type)) {
+            return;
+        }
 
-    const intervalHours = Number(process.env[intervalEnv]) || fallbackHours;
+        try {
+            const posted = await task(client);
+            if (posted) {
+                console.log(`[AUTOPOST] ${name} posted to ${posted} channel(s).`);
+            }
+        } catch (error) {
+            console.error(`[AUTOPOST] ${name} failed:`, error);
+        }
+    };
+
+    const intervalHours = Number(process.env[intervalEnv]);
+    const safeIntervalHours = Number.isFinite(intervalHours) && intervalHours > 0
+        ? intervalHours
+        : fallbackHours;
 
     console.log(
-        `[AUTOPOST] ${name} enabled — every ${intervalHours} hour(s).`
+        `[AUTOPOST] ${name} ready — configure channels with /embed-config — every ${safeIntervalHours} hour(s).`
     );
 
-    task(client).catch(error => {
-        console.error(`[AUTOPOST] Initial ${name} failed:`, error);
-    });
-
-    const timer = setInterval(() => {
-        task(client).catch(error => {
-            console.error(`[AUTOPOST] Scheduled ${name} failed:`, error);
-        });
-    }, intervalMs(intervalEnv, fallbackHours));
-
+    const timer = setInterval(run, intervalMs(intervalEnv, fallbackHours));
     timers.set(name, timer);
 }
 
 function startAutoPostScheduler(client) {
     stopAutoPostScheduler();
 
+    console.log("");
+    console.log("========================================");
+    console.log("       BC TRUCK WORKS AUTOPOST");
+    console.log("========================================");
+
     scheduleTask(
         "Server advertisements",
+        "server_recruitment",
         client,
-        "SERVER_AD_ENABLED",
         "SERVER_AD_INTERVAL_HOURS",
         24,
         postServerAd
@@ -56,8 +68,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Convoy announcements",
+        "convoy",
         client,
-        "CONVOY_AUTOPOST_ENABLED",
         "CONVOY_AUTOPOST_INTERVAL_HOURS",
         12,
         postConvoyUpdate
@@ -65,8 +77,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "VTC recruitment",
+        "vtc_recruitment",
         client,
-        "VTC_AUTOPOST_ENABLED",
         "VTC_AUTOPOST_INTERVAL_HOURS",
         168,
         postVtcRecruitment
@@ -74,8 +86,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Changelog updates",
+        "changelog",
         client,
-        "CHANGELOG_AUTOPOST_ENABLED",
         "CHANGELOG_AUTOPOST_INTERVAL_HOURS",
         24,
         postChangelogUpdate
@@ -83,12 +95,15 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Maintenance notices",
+        "maintenance",
         client,
-        "MAINTENANCE_AUTOPOST_ENABLED",
         "MAINTENANCE_AUTOPOST_INTERVAL_HOURS",
         168,
         postMaintenanceNotice
     );
+
+    console.log("========================================");
+    console.log("");
 }
 
 function stopAutoPostScheduler() {
