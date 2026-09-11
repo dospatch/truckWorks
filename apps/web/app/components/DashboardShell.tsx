@@ -7,7 +7,6 @@ const links = [
   ["Downloads", "/dashboard/downloads"],
   ["VTC", "/dashboard/vtc"],
   ["Support", "/dashboard/support"],
-  ["Admin Panel", "/dashboard/admin"],
 ];
 
 export function DashboardShell({ children, title }: { children: React.ReactNode; title: string }) {
