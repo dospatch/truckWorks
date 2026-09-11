@@ -1,51 +1,214 @@
+const fs = require("fs");
+const path = require("path");
+
 const { postServerAd } = require("./serverAd");
+
 const {
     postConvoyUpdate,
     postVtcRecruitment,
     postMaintenanceNotice,
     postChangelogUpdate
 } = require("./autoPost");
-const embedChannelConfig = require("../embedChannelConfig");
 
 const timers = new Map();
 
-function intervalMs(envName, fallbackHours) {
-    const hours = Number(process.env[envName]);
-    const safeHours = Number.isFinite(hours) && hours > 0 ? hours : fallbackHours;
-    return safeHours * 60 * 60 * 1000;
+const STATE_PATH = path.join(
+    __dirname,
+    "../../../../data/autopost-state.json"
+);
+
+function loadState() {
+    try {
+        if (!fs.existsSync(STATE_PATH)) {
+            return {};
+        }
+
+        const raw = fs.readFileSync(STATE_PATH, "utf8");
+
+        if (!raw.trim()) {
+            return {};
+        }
+
+        const parsed = JSON.parse(raw);
+
+        return parsed && typeof parsed === "object"
+            ? parsed
+            : {};
+    } catch (error) {
+        console.error(
+            "[AUTOPOST] Failed to load persistent state:",
+            error
+        );
+
+        return {};
+    }
 }
 
-function isConfigured(type) {
-    const config = embedChannelConfig.get(type);
-    return Boolean(config?.enabled && Array.isArray(config.channelIds) && config.channelIds.length);
+function saveState(state) {
+    try {
+        fs.mkdirSync(
+            path.dirname(STATE_PATH),
+            { recursive: true }
+        );
+
+        fs.writeFileSync(
+            STATE_PATH,
+            JSON.stringify(state, null, 2),
+            "utf8"
+        );
+    } catch (error) {
+        console.error(
+            "[AUTOPOST] Failed to save persistent state:",
+            error
+        );
+    }
 }
 
-function scheduleTask(name, type, client, intervalEnv, fallbackHours, task) {
-    const run = async () => {
-        if (!isConfigured(type)) {
+const state = loadState();
+
+function getIntervalHours(envName, fallback) {
+    const value = Number(process.env[envName]);
+
+    if (!Number.isFinite(value) || value <= 0) {
+        return fallback;
+    }
+
+    return value;
+}
+
+function getChannelIds(envName) {
+    return String(process.env[envName] || "")
+        .split(",")
+        .map(id => id.trim())
+        .filter(Boolean);
+}
+
+function hasChannels(envName) {
+    return getChannelIds(envName).length > 0;
+}
+
+function canPost(name, intervalHours) {
+    const lastPosted = Number(state[name] || 0);
+
+    if (!lastPosted) {
+        return true;
+    }
+
+    const elapsed = Date.now() - lastPosted;
+    const intervalMs = intervalHours * 60 * 60 * 1000;
+
+    return elapsed >= intervalMs;
+}
+
+function timeUntilNextPost(name, intervalHours) {
+    const lastPosted = Number(state[name] || 0);
+
+    if (!lastPosted) {
+        return 0;
+    }
+
+    const intervalMs =
+        intervalHours * 60 * 60 * 1000;
+
+    const remaining =
+        intervalMs - (Date.now() - lastPosted);
+
+    return Math.max(0, remaining);
+}
+
+async function runTask(
+    name,
+    intervalHours,
+    task
+) {
+    if (!canPost(name, intervalHours)) {
+        const remaining =
+            timeUntilNextPost(
+                name,
+                intervalHours
+            );
+
+        const minutes =
+            Math.ceil(
+                remaining / 60000
+            );
+
+        console.log(
+            `[AUTOPOST] ${name} skipped — next post allowed in approximately ${minutes} minute(s).`
+        );
+
+        return;
+    }
+
+    try {
+        const result = await task();
+
+        if (result === false) {
+            console.log(
+                `[AUTOPOST] ${name} did not post. Persistent timer was not updated.`
+            );
+
             return;
         }
 
-        try {
-            const posted = await task(client);
-            if (posted) {
-                console.log(`[AUTOPOST] ${name} posted to ${posted} channel(s).`);
-            }
-        } catch (error) {
-            console.error(`[AUTOPOST] ${name} failed:`, error);
-        }
-    };
+        state[name] = Date.now();
 
-    const intervalHours = Number(process.env[intervalEnv]);
-    const safeIntervalHours = Number.isFinite(intervalHours) && intervalHours > 0
-        ? intervalHours
-        : fallbackHours;
+        saveState(state);
+
+        console.log(
+            `[AUTOPOST] ${name} completed and persistent timer updated.`
+        );
+    } catch (error) {
+        console.error(
+            `[AUTOPOST] ${name} failed:`,
+            error
+        );
+    }
+}
+
+function scheduleTask(
+    name,
+    client,
+    channelEnv,
+    intervalEnv,
+    fallbackHours,
+    task
+) {
+    if (!hasChannels(channelEnv)) {
+        console.log(
+            `[AUTOPOST] ${name} skipped — ${channelEnv} is not configured.`
+        );
+
+        return;
+    }
+
+    const intervalHours =
+        getIntervalHours(
+            intervalEnv,
+            fallbackHours
+        );
+
+    const channelCount =
+        getChannelIds(channelEnv).length;
 
     console.log(
-        `[AUTOPOST] ${name} ready — configure channels with /embed-config — every ${safeIntervalHours} hour(s).`
+        `[AUTOPOST] ${name} active — ${channelCount} channel(s) — every ${intervalHours} hour(s).`
     );
 
-    const timer = setInterval(run, intervalMs(intervalEnv, fallbackHours));
+    runTask(
+        name,
+        intervalHours,
+        () => task(client)
+    );
+
+    const timer = setInterval(() => {
+        runTask(
+            name,
+            intervalHours,
+            () => task(client)
+        );
+    }, intervalHours * 60 * 60 * 1000);
+
     timers.set(name, timer);
 }
 
@@ -58,9 +221,9 @@ function startAutoPostScheduler(client) {
     console.log("========================================");
 
     scheduleTask(
-        "Server advertisements",
-        "server_recruitment",
+        "Server recruitment",
         client,
+        "SERVER_AD_CHANNEL_ID",
         "SERVER_AD_INTERVAL_HOURS",
         24,
         postServerAd
@@ -68,8 +231,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Convoy announcements",
-        "convoy",
         client,
+        "CONVOY_AUTOPOST_CHANNEL_ID",
         "CONVOY_AUTOPOST_INTERVAL_HOURS",
         12,
         postConvoyUpdate
@@ -77,8 +240,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "VTC recruitment",
-        "vtc_recruitment",
         client,
+        "VTC_AUTOPOST_CHANNEL_IDS",
         "VTC_AUTOPOST_INTERVAL_HOURS",
         168,
         postVtcRecruitment
@@ -86,8 +249,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Changelog updates",
-        "changelog",
         client,
+        "CHANGELOG_AUTOPOST_CHANNEL_ID",
         "CHANGELOG_AUTOPOST_INTERVAL_HOURS",
         24,
         postChangelogUpdate
@@ -95,8 +258,8 @@ function startAutoPostScheduler(client) {
 
     scheduleTask(
         "Maintenance notices",
-        "maintenance",
         client,
+        "MAINTENANCE_AUTOPOST_CHANNEL_ID",
         "MAINTENANCE_AUTOPOST_INTERVAL_HOURS",
         168,
         postMaintenanceNotice
