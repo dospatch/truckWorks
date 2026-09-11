@@ -7,10 +7,9 @@ const {
 
 const fs = require("fs");
 const path = require("path");
+const embedChannelConfig = require("../embedChannelConfig");
 
-async function getChannel(client, envName) {
-    const channelId = process.env[envName];
-
+async function getChannel(client, channelId) {
     if (!channelId) {
         return null;
     }
@@ -18,11 +17,34 @@ async function getChannel(client, envName) {
     const channel = await client.channels.fetch(channelId).catch(() => null);
 
     if (!channel || !channel.isTextBased()) {
-        console.error(`[AUTOPOST] Invalid channel configured in ${envName}.`);
+        console.error(`[AUTOPOST] Invalid channel configured: ${channelId}`);
         return null;
     }
 
     return channel;
+}
+
+function configuredChannels(type) {
+    const config = embedChannelConfig.get(type);
+
+    if (!config?.enabled || !Array.isArray(config.channelIds)) {
+        return [];
+    }
+
+    return [...new Set(config.channelIds.filter(Boolean))];
+}
+
+async function getConfiguredChannels(client, type) {
+    const channels = [];
+
+    for (const channelId of configuredChannels(type)) {
+        const channel = await getChannel(client, channelId);
+        if (channel) {
+            channels.push(channel);
+        }
+    }
+
+    return channels;
 }
 
 function addWebsiteButtons(rowType = "website") {
@@ -52,51 +74,60 @@ function addWebsiteButtons(rowType = "website") {
 }
 
 async function postConvoyUpdate(client) {
-    const channel = await getChannel(client, "CONVOY_AUTOPOST_CHANNEL_ID");
-    if (!channel) return;
+    const channels = await getConfiguredChannels(client, "convoy");
+    if (!channels.length) return 0;
 
-    const guild = channel.guild;
-    const events = await guild.scheduledEvents.fetch().catch(() => null);
+    const sentGuilds = new Set();
+    let posted = 0;
 
-    if (!events) return;
+    for (const channel of channels) {
+        if (sentGuilds.has(channel.guild.id)) continue;
+        sentGuilds.add(channel.guild.id);
 
-    const now = Date.now();
-    const convoys = [...events.values()]
-        .filter(event =>
-            event.scheduledStartTimestamp > now &&
-            event.name.toLowerCase().includes("convoy")
-        )
-        .sort((a, b) => a.scheduledStartTimestamp - b.scheduledStartTimestamp)
-        .slice(0, 5);
+        const events = await channel.guild.scheduledEvents.fetch().catch(() => null);
+        if (!events) continue;
 
-    if (!convoys.length) {
-        return;
+        const now = Date.now();
+        const convoys = [...events.values()]
+            .filter(event =>
+                event.scheduledStartTimestamp > now &&
+                event.name.toLowerCase().includes("convoy")
+            )
+            .sort((a, b) => a.scheduledStartTimestamp - b.scheduledStartTimestamp)
+            .slice(0, 5);
+
+        if (!convoys.length) continue;
+
+        const description = convoys
+            .map(event =>
+                `### 🚛 ${event.name}\n` +
+                `📅 <t:${Math.floor(event.scheduledStartTimestamp / 1000)}:F>\n` +
+                `⏱️ <t:${Math.floor(event.scheduledStartTimestamp / 1000)}:R>\n` +
+                `${event.description || "No additional information provided."}`
+            )
+            .join("\n\n");
+
+        const embed = new EmbedBuilder()
+            .setTitle("🚛 Upcoming TruckWorks Convoys")
+            .setDescription(description)
+            .setFooter({ text: "BC TRUCK WORKS • Convoy Network" })
+            .setTimestamp();
+
+        for (const target of channels.filter(item => item.guild.id === channel.guild.id)) {
+            await target.send({
+                content: "📢 **UPCOMING CONVOYS** — mark your calendar!",
+                embeds: [embed]
+            });
+            posted++;
+        }
     }
 
-    const description = convoys
-        .map(event =>
-            `### 🚛 ${event.name}\n` +
-            `📅 <t:${Math.floor(event.scheduledStartTimestamp / 1000)}:F>\n` +
-            `⏱️ <t:${Math.floor(event.scheduledStartTimestamp / 1000)}:R>\n` +
-            `${event.description || "No additional information provided."}`
-        )
-        .join("\n\n");
-
-    const embed = new EmbedBuilder()
-        .setTitle("🚛 Upcoming TruckWorks Convoys")
-        .setDescription(description)
-        .setFooter({ text: "BC TRUCK WORKS • Convoy Network" })
-        .setTimestamp();
-
-    await channel.send({
-        content: "📢 **UPCOMING CONVOYS** — mark your calendar!",
-        embeds: [embed]
-    });
+    return posted;
 }
 
 async function postVtcRecruitment(client) {
-    const channel = await getChannel(client, "VTC_AUTOPOST_CHANNEL_ID");
-    if (!channel) return;
+    const channels = await getConfiguredChannels(client, "vtc_recruitment");
+    if (!channels.length) return 0;
 
     const embed = new EmbedBuilder()
         .setTitle("🚛 BUILD YOUR VTC WITH BC TRUCK WORKS")
@@ -112,16 +143,23 @@ async function postVtcRecruitment(client) {
         .setFooter({ text: "BC TRUCK WORKS • VTC Network" })
         .setTimestamp();
 
-    await channel.send({
-        content: "🚨 **VTC OWNERS — YOUR NEXT STOP IS TRUCK WORKS!** 🚨",
-        embeds: [embed],
-        components: [addWebsiteButtons()]
-    });
+    let posted = 0;
+
+    for (const channel of channels) {
+        await channel.send({
+            content: "🚨 **VTC OWNERS — YOUR NEXT STOP IS TRUCK WORKS!** 🚨",
+            embeds: [embed],
+            components: [addWebsiteButtons()]
+        });
+        posted++;
+    }
+
+    return posted;
 }
 
 async function postMaintenanceNotice(client) {
-    const channel = await getChannel(client, "MAINTENANCE_AUTOPOST_CHANNEL_ID");
-    if (!channel) return;
+    const channels = await getConfiguredChannels(client, "maintenance");
+    if (!channels.length) return 0;
 
     const message = process.env.MAINTENANCE_AUTOPOST_MESSAGE ||
         "TruckWorks maintenance information will be posted here when maintenance is scheduled.";
@@ -136,24 +174,30 @@ async function postMaintenanceNotice(client) {
         .setFooter({ text: "BC TRUCK WORKS • Platform Operations" })
         .setTimestamp();
 
-    await channel.send({ embeds: [embed] });
+    let posted = 0;
+
+    for (const channel of channels) {
+        await channel.send({ embeds: [embed] });
+        posted++;
+    }
+
+    return posted;
 }
 
 async function postChangelogUpdate(client) {
-    const channel = await getChannel(client, "CHANGELOG_AUTOPOST_CHANNEL_ID");
-    if (!channel) return;
+    const channels = await getConfiguredChannels(client, "changelog");
+    if (!channels.length) return 0;
 
     const changelogPath = path.join(__dirname, "../../../../CHANGELOG.md");
 
     if (!fs.existsSync(changelogPath)) {
         console.error("[AUTOPOST] CHANGELOG.md was not found.");
-        return;
+        return 0;
     }
 
     const content = fs.readFileSync(changelogPath, "utf8");
     const sections = content.split("\n---\n").filter(Boolean);
     const latest = sections[1] || sections[0] || "No changelog entries available.";
-
     const trimmed = latest.slice(0, 3900);
 
     const embed = new EmbedBuilder()
@@ -162,11 +206,20 @@ async function postChangelogUpdate(client) {
         .setFooter({ text: "BC TRUCK WORKS • Changelog" })
         .setTimestamp();
 
-    await channel.send({ embeds: [embed] });
+    let posted = 0;
+
+    for (const channel of channels) {
+        await channel.send({ embeds: [embed] });
+        posted++;
+    }
+
+    return posted;
 }
 
 module.exports = {
     getChannel,
+    configuredChannels,
+    getConfiguredChannels,
     addWebsiteButtons,
     postConvoyUpdate,
     postVtcRecruitment,
