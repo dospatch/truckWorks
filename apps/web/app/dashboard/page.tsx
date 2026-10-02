@@ -1,13 +1,35 @@
+import Link from "next/link";
 import { DashboardShell } from "../components/DashboardShell";
 
 export default function DashboardPage() {
   return <DashboardShell title="Dashboard">
-    <div className="section-title"><div className="eyebrow">Customer Portal</div><h2>Welcome to BC TRUCK WORKS.</h2><p>Your account overview will become the control center for every server and service you own.</p></div>
-    <div className="grid three">
-      <article className="card stat"><div><div className="kicker">Servers</div><strong>0</strong><div className="kicker">No servers registered yet</div></div><span className="badge warning">Setup</span></article>
-      <article className="card stat"><div><div className="kicker">Licenses</div><strong>0</strong><div className="kicker">No active licenses</div></div><span className="badge warning">Setup</span></article>
-      <article className="card stat"><div><div className="kicker">Support</div><strong>0</strong><div className="kicker">Open support requests</div></div><span className="badge">Ready</span></article>
+    <div className="section-title">
+      <div className="eyebrow">Operations Center</div>
+      <h2>BC TRUCK WORKS Dashboard</h2>
+      <p>Your control center for ATS, ETS2, servers, VTC services, and live simulator telemetry.</p>
     </div>
-    <div className="section"><div className="grid two"><article className="card"><h3>Next step</h3><p>Register your first dedicated server. The backend will later issue an agent identity and connect its heartbeat to this dashboard.</p><a className="btn primary" href="/dashboard/servers">Manage servers</a></article><article className="card"><h3>Platform status</h3><p>Customer portal foundation is online. API, authentication, licensing, and server-agent connectivity are being connected in the next phase.</p><span className="badge">Foundation online</span></article></div></div>
+
+    <div className="grid three">
+      <article className="card stat"><div><div className="kicker">Live telemetry</div><strong>ATS / ETS2</strong><div className="kicker">Connect your simulator on this PC</div></div><span className="badge">Ready</span></article>
+      <article className="card stat"><div><div className="kicker">Servers</div><strong>0</strong><div className="kicker">Register a TruckWorks server</div></div><span className="badge warning">Setup</span></article>
+      <article className="card stat"><div><div className="kicker">Platform</div><strong>ONLINE</strong><div className="kicker">Web platform is deployed</div></div><span className="badge">Online</span></article>
+    </div>
+
+    <div className="section">
+      <div className="grid two">
+        <article className="card">
+          <div className="eyebrow">LIVE SIMULATOR</div>
+          <h3>See your actual truck data</h3>
+          <p>Open Live Telemetry to read speed, truck, RPM, fuel, job, cargo, route, and other values directly from ATS or ETS2.</p>
+          <Link className="btn primary" href="/dashboard/telemetry">Open Live Telemetry</Link>
+        </article>
+        <article className="card">
+          <div className="eyebrow">COMPANY NETWORK</div>
+          <h3>Connect your drivers</h3>
+          <p>Once servers and agents are registered, telemetry can be synchronized into the TruckWorks API for centralized driver and fleet statistics.</p>
+          <Link className="btn ghost" href="/dashboard/servers">Manage servers</Link>
+        </article>
+      </div>
+    </div>
   </DashboardShell>;
 }
