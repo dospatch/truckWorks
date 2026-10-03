@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-function isActive(pathname: string, href: string) {\n  if (href === "/ats" || href === "/ets2" || href === "/convoy" || href === "/vtc" || href === "/support") return pathname === href;\n  return pathname === href || pathname.startsWith(`${href}/`);\n}\n\nconst groups = [
+function isActive(pathname: string, href: string) {
+  if (href === "/ats" || href === "/ets2" || href === "/convoy" || href === "/vtc" || href === "/support") return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+const groups = [
   { title: "DRIVE", items: [["▶","Drive","/ats"],["◈","ETS2","/ets2"],["🎙","Co-Driver","/companion/codriver"],["➤","Navigation","/companion/navigation"],["▣","Truck Health","/dashboard/telemetry"],["⇅","Shift Coach","/companion/shift-coach"]] },
   { title: "WORK", items: [["⛟","Dispatch & BOL","/companion/dispatch"],["▤","Trip History","/companion/trips"],["▥","Earnings & Stats","/companion/earnings"],["📷","Driver Journal","/companion/journal"],["🏢","Company / VTC","/vtc"],["★","Career","/companion/career"]] },
   { title: "CONVOY", items: [["◉","Convoy Hub","/convoy"],["◎","Convoy","/companion/convoy"],["🏆","Leaderboard","/companion/leaderboard"],["⌖","Convoy Radar","/companion/radar"],["⚑","Sessions","/companion/sessions"],["✔","Pre-Flight","/companion/preflight"],["✦","Intelligence","/companion/intelligence"],["⌘","Command Center","/companion/command"]] },
