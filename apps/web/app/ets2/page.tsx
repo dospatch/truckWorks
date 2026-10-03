@@ -1,0 +1,1 @@
+import { CompanionGame } from "../components/CompanionGame"; export default function Page(){return <CompanionGame game="ETS2"/>}
