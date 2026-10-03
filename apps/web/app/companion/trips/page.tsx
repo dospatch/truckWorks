@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="WORK" title="Trip History" description="Review completed and current trips as the TruckWorks platform grows its driver history." items={["Current Trip","Completed Trips","Distance","Cargo","Fuel Used","Trip Duration","Route History"]}/>
