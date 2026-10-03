@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Convoy Pre-Flight" description="Check simulator connection, telemetry, truck condition, and driver readiness before a convoy." items={["Telemetry","Truck Health","Fuel","Cargo","Route","Driver Ready","Convoy Ready"]}/>
