@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Convoy" description="Coordinate multiplayer sessions and keep your group organized." items={["Active Convoy","Members","Session Details","Ready Check","Session Notes","End Session"]}/>
