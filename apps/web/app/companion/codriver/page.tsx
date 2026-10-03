@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="DRIVE" title="Co-Driver" description="Your in-cab companion for trip awareness, reminders, alerts, and driving assistance." items={["Voice Dispatcher","Rest Reminders","Fuel Reminders","Speed Alerts","Delivery Updates","Trip Announcements"]}/>
