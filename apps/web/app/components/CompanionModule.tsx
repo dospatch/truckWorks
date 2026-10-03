@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { CompanionShell } from "./CompanionShell";
+
+export function CompanionModule({title,eyebrow,description,items=[]}:{title:string;eyebrow?:string;description:string;items?:string[]}) {
+ return <CompanionShell game="GENERAL"><div className="companion-content"><section className="drive-hero"><div><div className="eyebrow">{eyebrow||"BC TRUCK WORKS"}</div><h2>{title}</h2><p>{description}</p></div><Link href="/ats" className="hero-action">Back to Drive →</Link></section><section className="panel"><div className="tool-grid">{(items.length?items:["Telemetry","Simulator connection","Driver controls","Notifications","Discord integration","Session status"]).map((x,i)=><div className="tool-card" key={x}><span>{["◆","◉","▣","⚙","✦","✓"][i%6]}</span><div><strong>{x}</strong><small>READY TO CONFIGURE</small></div></div>)}</div></section><section className="panel"><div className="eyebrow">STATUS</div><h3>BC TRUCK WORKS module ready</h3><p className="muted">This section is part of the rebuilt ATS + ETS2 companion platform. Simulator-specific data will appear here as the connected telemetry and account services provide it.</p></section></div></CompanionShell>;
+}
