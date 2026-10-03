@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, Collection, ActivityType } = require("discord
 const config = require("./config");
 const setupCommand = require("./commands/setup");
 const statusCommand = require("./commands/status");
+const truckworksCommand = require("./commands/truckworks");
 const { updateBotStatusChannel } = require("./status");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -9,6 +10,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 client.commands.set(setupCommand.data.name, setupCommand);
 client.commands.set(statusCommand.data.name, statusCommand);
+client.commands.set(truckworksCommand.data.name, truckworksCommand);
 
 client.once("clientReady", async () => {
   console.log("");
