@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/admin');
 const presenceRoutes = require('./routes/presence');
 const { errorHandler } = require('./middleware/errorHandler');
 const telemetryRoutes = require('./routes/telemetry');
+const tripRoutes = require('./routes/trips');
 
 const app = express();
 app.disable('x-powered-by');
@@ -22,5 +23,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', presenceRoutes);
 app.use('/api', telemetryRoutes);
+app.use('/api', tripRoutes);
 app.use(errorHandler);
 module.exports = app;
