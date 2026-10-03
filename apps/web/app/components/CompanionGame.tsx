@@ -17,12 +17,35 @@ type Trip = {
   cargo: string;
   route: string;
   income: number | null;
+  startOdometerKm: number | null;
+  endOdometerKm?: number | null;
+  persisted?: boolean;
 };
 
 const TELEMETRY_URL = "http://127.0.0.1:25555/api/ets2/telemetry";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 const TRIP_KEY = "bc-truckworks-active-trip";
 const HISTORY_KEY = "bc-truckworks-trip-history";
 const SETTINGS_KEY = "bc-truckworks-driver-settings";
+
+function fromApiTrip(row: any): Trip {
+  return {
+    id: row.id,
+    game: row.game,
+    truck: row.truck_name || "Truck",
+    startedAt: new Date(row.started_at).getTime(),
+    endedAt: row.ended_at ? new Date(row.ended_at).getTime() : undefined,
+    miles: Number(row.miles || 0),
+    startOdometerKm: num(row.odometer_start_km),
+    endOdometerKm: num(row.odometer_end_km),
+    fuelStart: num(row.fuel_start),
+    fuelEnd: num(row.fuel_end),
+    cargo: row.cargo || "No cargo",
+    route: row.route_name || "Route not set",
+    income: num(row.income),
+    persisted: true,
+  };
+}
 
 function pick(d: T | null, paths: string[], fallback: any = null) {
   for (const path of paths) {
@@ -69,7 +92,10 @@ export function CompanionGame({ game }: { game: "ATS" | "ETS2" }) {
   const [now, setNow] = useState(Date.now());
   const [aiMessage, setAiMessage] = useState("Co-driver online. I’ll watch your speed, fuel, trip progress and route.");
   const [events, setEvents] = useState<string[]>([]);
+  const activeTripRef = useRef<Trip | null>(null);
   const last = useRef({ live: false, speed: 0, odometer: null as number | null, destination: "", warned: false });
+
+  useEffect(() => { activeTripRef.current = activeTrip; }, [activeTrip]);
 
   useEffect(() => {
     try {
@@ -93,6 +119,25 @@ export function CompanionGame({ game }: { game: "ATS" | "ETS2" }) {
     if (!activeTrip) localStorage.removeItem(TRIP_KEY);
     else localStorage.setItem(TRIP_KEY, JSON.stringify(activeTrip));
   }, [activeTrip]);
+
+  const refreshTrips = useCallback(async () => {
+    if (!API_URL) return;
+    try {
+      const [statsResponse, historyResponse] = await Promise.all([
+        fetch(API_URL + "/api/trips/stats", { credentials: "include", cache: "no-store" }),
+        fetch(API_URL + "/api/trips?limit=50", { credentials: "include", cache: "no-store" }),
+      ]);
+      if (!statsResponse.ok || !historyResponse.ok) return;
+      const stats = await statsResponse.json();
+      const rows = await historyResponse.json();
+      const apiHistory = Array.isArray(rows.trips) ? rows.trips.map(fromApiTrip) : [];
+      setHistory(apiHistory);
+      if (stats.activeTrip) setActiveTrip(current => current?.persisted ? current : fromApiTrip(stats.activeTrip));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(apiHistory));
+    } catch {}
+  }, []);
+
+  useEffect(() => { refreshTrips(); }, [refreshTrips]);
 
   const speak = useCallback((message: string) => {
     setAiMessage(message);
