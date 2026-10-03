@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="DRIVE" title="Navigation" description="Keep route information, destination details, remaining distance, and trip progress together." items={["Current Route","Destination","Remaining Distance","ETA","Rest Stop","Route Alerts"]}/>
