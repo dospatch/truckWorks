@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="STREAM" title="Mixer & OBS" description="A dedicated control area for streaming status and future OBS integrations." items={["OBS Status","Scenes","Audio","Sources","Stream Health","Quick Controls"]}/>
