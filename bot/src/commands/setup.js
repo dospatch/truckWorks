@@ -83,7 +83,7 @@ module.exports = {
         categoriesCreated++;
 
         for (const name of section.channels || []) {
-          await interaction.guild.channels.create({
+          const channel = await interaction.guild.channels.create({
             name,
             type: ChannelType.GuildText,
             parent: category.id,
