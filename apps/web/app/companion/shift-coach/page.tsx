@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="DRIVE" title="Shift Coach" description="Monitor engine RPM, driving patterns, fuel awareness, and shift-focused telemetry." items={["RPM Monitor","Shift Guidance","Fuel Efficiency","Cruise Awareness","Driving Alerts","Session Summary"]}/>
