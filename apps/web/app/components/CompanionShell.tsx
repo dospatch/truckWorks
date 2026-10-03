@@ -20,7 +20,7 @@ export function CompanionShell({ children, game }: { children: React.ReactNode; 
   const pathname = usePathname();
   return <div className="companion">
     <aside className="companion-sidebar">
-      <Link href="/" className="companion-brand"><div className="brand-mark">BC</div><div><strong>BC TRUCK WORKS</strong><small>ATS / ETS2 COMPANION</small></div></Link>
+      <Link href="/" className="companion-brand"><img className="companion-brand-logo" src="/bc-truck-works-logo.webp" alt="BC TRUCK WORKS logo" /><div><strong>BC TRUCK WORKS</strong><small>ATS / ETS2 COMPANION</small></div></Link>
       <div className="version">LIVE COMPANION v2.1.0</div>
       <nav className="companion-nav">
         {groups.map(group => <div className="nav-section" key={group.title}><div className="nav-heading">{group.title}</div>{group.items.map(([icon,label,href]) => <Link key={href} href={href} className={"companion-link "+(isActive(pathname, href)?"active":"")}><span>{icon}</span>{label}</Link>)}</div>)}
