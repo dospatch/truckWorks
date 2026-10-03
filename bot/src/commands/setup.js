@@ -162,7 +162,7 @@ module.exports = {
         `📺 Channels created: ${channelsCreated}`,
         "",
         "Your new BC TRUCK WORKS Discord layout is ready.",
-      ].join("\\n")
+      ].join("\n")
     );
   },
 };
