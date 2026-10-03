@@ -9,7 +9,7 @@ module.exports = {
         .setDescription("View upcoming TruckWorks convoy information."),
 
     async execute(interaction) {
-        const events = await interaction.guild.scheduledEvents.fetch();
+        const events = await interaction.guild.scheduledEvents.fetch().catch(() => new Map());
 
         const convoys = [...events.values()]
             .filter(event =>
