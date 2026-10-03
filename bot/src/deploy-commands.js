@@ -3,6 +3,7 @@ const config = require("./config");
 const setupCommand = require("./commands/setup");
 const statusCommand = require("./commands/status");
 const truckworksCommand = require("./commands/truckworks");
+const telemetryCommand = require("./commands/telemetry");
 
 if (!config.token || !config.clientId || !config.guildId) {
   console.error("❌ DISCORD_TOKEN, DISCORD_CLIENT_ID, and DISCORD_GUILD_ID are required in bot/.env");
@@ -13,6 +14,7 @@ const commands = [
   setupCommand.data.toJSON(),
   statusCommand.data.toJSON(),
   truckworksCommand.data.toJSON(),
+  telemetryCommand.data.toJSON(),
 ];
 
 const rest = new REST({ version: "10" }).setToken(config.token);
