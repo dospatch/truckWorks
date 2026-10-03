@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Convoy Intelligence" description="Bring convoy telemetry and session information together for better situational awareness." items={["Live Drivers","Route Status","Alerts","Traffic Notes","Session Metrics","Trip Intelligence"]}/>
