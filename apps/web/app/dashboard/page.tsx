@@ -8,7 +8,7 @@ type Telemetry = Record<string, any>;
 
 function pick(data: Telemetry | null, paths: string[], fallback: any = "—") {
   for (const path of paths) {
-    const value = path.split(".").reduce((obj, key) => obj?.[key], data);
+    const value = path.split(".").reduce((obj: any, key) => obj?.[key], data as any);
     if (value !== undefined && value !== null && value !== "") return value;
   }
   return fallback;
