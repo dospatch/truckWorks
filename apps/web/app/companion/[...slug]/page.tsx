@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CompanionShell } from "../components/CompanionShell";
+import { CompanionShell } from "../../components/CompanionShell";
 
 const titles: Record<string,string> = {
   codriver:"Co-Driver", navigation:"Navigation", dispatch:"Dispatch & BOL", trips:"Trip History", earnings:"Earnings & Stats",
