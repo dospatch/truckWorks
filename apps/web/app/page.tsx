@@ -1,112 +1,169 @@
+"use client";
+
 import Link from "next/link";
-import { Navigation } from "./components/Navigation";
+import { useCallback, useEffect, useState } from "react";
 
-const features = [
-  { icon: "🌐", title: "Server Network", text: "Manage dedicated ATS and ETS2 servers, monitor connections, and keep your trucking network organized." },
-  { icon: "🚛", title: "VTC Management", text: "Build your VTC community with driver management, recruitment, fleet tools, and member workflows." },
-  { icon: "📦", title: "Mod Database", text: "Give your community one place to discover trucks, trailers, maps, skins, accessories, and other resources." },
-  { icon: "📥", title: "Downloads", text: "Keep official TruckWorks files, server agents, resources, updates, and community downloads together." },
-  { icon: "📅", title: "Convoys & Events", text: "Promote upcoming convoys and events so drivers always know what is happening next." },
-  { icon: "🛠️", title: "Support", text: "Centralize support and platform assistance while keeping customer and server information separated." },
-];
+type Telemetry = Record<string, any>;
 
-const stats = [
-  ["🌎", "ATS + ETS2", "Built for the trucking community"],
-  ["🚛", "Multi-server", "Designed to scale with your network"],
-  ["🔐", "Customer portal", "One account for your TruckWorks services"],
-  ["⚡", "Modern platform", "Website, API, agents, and tools"],
-];
+function pick(data: Telemetry | null, paths: string[], fallback: any = "—") {
+  for (const path of paths) {
+    const value = path.split(".").reduce((obj, key) => obj?.[key], data);
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return fallback;
+}
+
+function num(value: any) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+const telemetryUrl = "http://127.0.0.1:25555/api/ets2/telemetry";
+
+const sections = [
+  ["DRIVE", [["▶","Drive","/ats"],["🎙","Co-Driver","#"],["➤","Navigation","#"],["▣","Truck Health","/dashboard/telemetry"],["⚙","Under the Hood","#"],["⇅","Shift Coach","#"]]],
+  ["WORK", [["⛟","Dispatch & BOL","#"],["▤","Trip History","#"],["▥","Earnings & Stats","#"],["📷","Journal","#"],["🏢","Company","/vtc"],["★","Career","#"]]],
+  ["CONVOY", [["◉","Convoy Hub","#"],["◎","Convoy","#"],["🏆","Leaderboard","#"],["⌖","Convoy Radar","#"],["⚑","Convoy Sessions","#"],["✔","Convoy Pre-Flight","#"],["✦","Convoy Intelligence","#"],["⌘","Command Center","#"],["◉","Companion CB","#"]]],
+  ["STREAM", [["🎥","Stream Studio","#"],["🎚","Mixer & OBS","#"]]],
+  ["SETUP", [["⚠","Alerts & Discord","#alerts"],["▦","Dashboard Studio","#"],["◆","Mods","/dashboard/downloads"],["⚙","Settings","#"],["💡","Suggestions","/support"]]]
+] as const;
 
 export default function Home() {
+  const [data, setData] = useState<Telemetry | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch(telemetryUrl + "?truckworks_ts=" + Date.now(), { cache: "no-store" });
+      if (!response.ok) throw new Error();
+      setData(await response.json());
+    } catch {
+      setData(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 1000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
+  const connected = Boolean(pick(data, ["game.connected"], false)) &&
+    String(pick(data, ["game.gameName"], "ATS")).toUpperCase().includes("ATS");
+
+  const truck = [pick(data, ["truck.make"], ""), pick(data, ["truck.model"], "")].filter(Boolean).join(" ") || "—";
+  const speed = num(pick(data, ["truck.speed"], null));
+  const fuel = num(pick(data, ["truck.fuelAmount", "truck.fuel"], null));
+  const rpm = num(pick(data, ["truck.rpm", "truck.engineRpm"], null));
+  const job = pick(data, ["job.cargo"], "no job");
+  const destination = pick(data, ["job.destinationCity", "job.destinationCityName"], "—");
+  const source = pick(data, ["job.sourceCity", "job.sourceCityName"], "—");
+  const distance = num(pick(data, ["navigation.estimatedDistance", "job.remainingDistanceKm"], null));
+
   return (
-    <>
-      <Navigation />
-      <main>
-        <section className="hero hero-home">
-          <div className="container hero-grid">
-            <div className="hero-copy">
-              <div className="eyebrow">🚛 The Truck Simulation Platform</div>
-              <h1>Run your trucking community from <span>one platform.</span></h1>
-              <p className="hero-lead">
-                BC TRUCK WORKS brings servers, VTCs, mods, downloads, convoys,
-                support, and customer tools together in one platform built for
-                American Truck Simulator and Euro Truck Simulator 2 communities.
-              </p>
-              <div className="hero-actions">
-                <Link href="/register" className="btn primary">🚛 Create your account</Link>
-                <Link href="/servers" className="btn ghost">🌐 Explore servers</Link>
-              </div>
-              <div className="hero-note">Built for drivers. Built for VTCs. Built for growing trucking communities.</div>
+    <div className="companion">
+      <aside className="companion-sidebar">
+        <div className="companion-brand">
+          <div className="brand-mark">BC</div>
+          <div><strong>BC TRUCK WORKS</strong><small>ATS / ETS2 COMPANION</small></div>
+        </div>
+        <div className="version">LIVE COMPANION v1.0.0</div>
+
+        <nav className="companion-nav">
+          {sections.map(([title, items]) => (
+            <div key={title} className="nav-section">
+              <div className="nav-heading">{title}</div>
+              {items.map(([icon, label, href]) =>
+                href === "#" ? (
+                  <button key={label} className="companion-link"><span>{icon}</span>{label}</button>
+                ) : (
+                  <Link key={label} href={href} className="companion-link"><span>{icon}</span>{label}</Link>
+                )
+              )}
             </div>
-            <div className="hero-panel">
-              <div className="panel-topline"><span className="status-dot" /> TruckWorks Network</div>
-              <div className="network-title">Your trucking world.<br /><strong>All in one place.</strong></div>
-              <div className="network-row"><span>🌎</span><div><strong>American Truck Simulator</strong><small>Servers • VTCs • Mods • Convoys</small></div><b>›</b></div>
-              <div className="network-row"><span>🇪🇺</span><div><strong>Euro Truck Simulator 2</strong><small>Servers • VTCs • Mods • Convoys</small></div><b>›</b></div>
-              <div className="network-footer"><span>🟢 Platform online</span><span>BC TRUCK WORKS</span></div>
+          ))}
+        </nav>
+
+        <div className="sidebar-game">
+          <div className="mini-label">SIMULATOR</div>
+          <strong>🇺🇸 American Truck Simulator</strong>
+          <span className={connected ? "live-dot" : "offline-dot"}>● {connected ? "LIVE" : "OFFLINE"}</span>
+        </div>
+      </aside>
+
+      <main className="companion-main">
+        <header className="companion-header">
+          <div><div className="crumb">BC TRUCK WORKS / DRIVE</div><h1>ATS Live Companion</h1></div>
+          <div className={connected ? "connection live" : "connection"}><span>●</span> Telemetry {connected ? "LIVE" : "OFFLINE"}</div>
+        </header>
+
+        <div className="companion-content">
+          {!connected && (
+            <div className="telemetry-warning">
+              <strong>Telemetry OFFLINE</strong>
+              <span>Start your ATS telemetry server to populate live data.</span>
             </div>
-          </div>
-        </section>
+          )}
 
-        <section className="stats-strip">
-          <div className="container stats-grid">
-            {stats.map(([icon, title, text]) => (
-              <div className="stat-mini" key={title}><span>{icon}</span><div><strong>{title}</strong><small>{text}</small></div></div>
-            ))}
-          </div>
-        </section>
-
-        <section id="platform" className="section container">
-          <div className="section-title centered">
-            <div className="eyebrow">Everything connected</div>
-            <h2>More than a website.</h2>
-            <p>TruckWorks is being built as a complete platform for trucking communities and server owners.</p>
-          </div>
-          <div className="grid three feature-grid">
-            {features.map((feature) => (
-              <article className="card feature-card" key={feature.title}>
-                <div className="feature-icon">{feature.icon}</div>
-                <h3>{feature.title}</h3>
-                <p>{feature.text}</p>
-                <span className="feature-arrow">Explore →</span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="section network-section">
-          <div className="container split-section">
+          <section className="drive-hero">
             <div>
-              <div className="eyebrow">🌐 Server network</div>
-              <h2>Your servers.<br /><span>Your network.</span></h2>
-              <p>Give every server its own identity while managing your entire network from a single customer portal.</p>
-              <div className="check-list">
-                <div>✓ Dedicated server registration</div>
-                <div>✓ Server connection monitoring</div>
-                <div>✓ Player and server status</div>
-                <div>✓ Licensing and activations</div>
-              </div>
-              <Link href="/dashboard/servers" className="btn primary">Manage servers</Link>
+              <div className="eyebrow">AMERICAN TRUCK SIMULATOR</div>
+              <h2>{connected ? "You're on the road." : "Waiting for your truck."}</h2>
+              <p>{connected ? truck + " • " + source + " → " + destination : "BC TRUCK WORKS is ready to receive live ATS telemetry from this PC."}</p>
             </div>
-            <div className="network-card card">
-              <div className="network-card-header"><div><small>SERVER NETWORK</small><h3>TruckWorks Fleet</h3></div><span className="badge">ONLINE</span></div>
-              <div className="server-preview"><span className="server-icon">🇺🇸</span><div><strong>American Haulers</strong><small>American Truck Simulator</small></div><span className="online-pill">● Online</span></div>
-              <div className="server-preview"><span className="server-icon">🇪🇺</span><div><strong>Euro Freight Network</strong><small>Euro Truck Simulator 2</small></div><span className="online-pill">● Online</span></div>
-              <div className="server-preview muted-row"><span className="server-icon">🚛</span><div><strong>Add your server</strong><small>Connect another dedicated server</small></div><b>+</b></div>
-            </div>
-          </div>
-        </section>
+            <Link href="/dashboard/telemetry" className="hero-action">Open Full Telemetry →</Link>
+          </section>
 
-        <section className="section container cta-section">
-          <div className="cta-card">
-            <div className="eyebrow">Ready to haul?</div>
-            <h2>Build your TruckWorks network.</h2>
-            <p>Create your account and get ready for servers, VTCs, downloads, events, and everything else coming to the platform.</p>
-            <div className="hero-actions"><Link href="/register" className="btn primary">Create your account</Link><Link href="/support" className="btn ghost">Contact support</Link></div>
+          <section className="telemetry-grid">
+            <article className="metric-card primary-metric"><div className="metric-label">SPEED</div><strong>{connected && speed !== null ? Math.round(speed) : "—"}</strong><small>MPH • Speed limit —</small></article>
+            <article className="metric-card"><div className="metric-label">TRUCK</div><strong>{connected ? truck : "—"}</strong><small>Current vehicle</small></article>
+            <article className="metric-card"><div className="metric-label">FUEL</div><strong>{connected && fuel !== null ? fuel.toFixed(1) : "—"}</strong><small>Current fuel</small></article>
+            <article className="metric-card"><div className="metric-label">ENGINE RPM</div><strong>{connected && rpm !== null ? Math.round(rpm).toLocaleString() : "—"}</strong><small>Engine speed</small></article>
+            <article className="metric-card"><div className="metric-label">TO DESTINATION</div><strong>{connected && distance !== null ? distance.toFixed(1) + " km" : "—"}</strong><small>{connected ? destination : "no job"}</small></article>
+            <article className="metric-card"><div className="metric-label">ALERTS</div><strong>0</strong><small>Active alerts</small></article>
+          </section>
+
+          <div className="content-columns">
+            <section className="panel" id="alerts">
+              <div className="panel-header"><div><div className="eyebrow">ALERTS</div><h3>Active Alerts</h3></div><span className="clear-pill">● ALL CLEAR</span></div>
+              <div className="alert-empty"><div className="alert-icon">✓</div><div><strong>No active alerts</strong><p>Drive safe. BC TRUCK WORKS will show truck, cargo, rest, speed, and deadline warnings here.</p></div></div>
+              <div className="panel-divider" />
+              <div className="panel-header compact"><h3>Alert History</h3><span>THIS SESSION</span></div>
+              <p className="muted">No alerts this session.</p>
+            </section>
+
+            <section className="panel">
+              <div className="eyebrow">CURRENT DELIVERY</div>
+              <h3>{connected ? job : "No active job"}</h3>
+              <div className="route-line"><span>{source}</span><b>→</b><span>{destination}</span></div>
+              <div className="delivery-stats">
+                <div><small>CARGO</small><strong>{connected ? job : "—"}</strong></div>
+                <div><small>DISTANCE</small><strong>{distance !== null ? distance.toFixed(1) + " km" : "—"}</strong></div>
+                <div><small>DEADLINE</small><strong>—</strong></div>
+              </div>
+              <Link href="/ats" className="panel-button">Open ATS Dashboard →</Link>
+            </section>
           </div>
-        </section>
+
+          <section className="panel">
+            <div className="panel-header"><div><div className="eyebrow">WORK</div><h3>Trip & Career Tools</h3></div><span className="muted">READY</span></div>
+            <div className="tool-grid">
+              {["⛟ Dispatch & BOL","▤ Trip History","▥ Earnings & Stats","📷 Driver Journal","🏢 Company","★ Career"].map(x => <button key={x} className="tool-card"><span>{x.slice(0,2)}</span><div><strong>{x.slice(3)}</strong><small>BC TRUCK WORKS</small></div></button>)}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header"><div><div className="eyebrow">CONVOY</div><h3>Convoy Command</h3></div><span className="muted">READY</span></div>
+            <div className="tool-grid convoy-grid">
+              {["◉ Convoy Hub","◎ Convoy","🏆 Leaderboard","⌖ Convoy Radar","⚑ Sessions","✔ Pre-Flight","✦ Intelligence","⌘ Command Center"].map(x => <button key={x} className="tool-card compact-tool"><span>{x.slice(0,2)}</span><strong>{x.slice(3)}</strong></button>)}
+            </div>
+          </section>
+
+          <section className="panel setup-panel">
+            <div><div className="eyebrow">SETUP</div><h3>Alerts, Discord & Driver Settings</h3><p>Configure notifications, Discord trip summaries, desktop alerts, voice dispatcher settings, telemetry thresholds, and dashboard preferences.</p></div>
+            <div className="setup-actions"><Link href="/dashboard/telemetry" className="panel-button">Telemetry Settings</Link><Link href="/support" className="panel-button secondary">Support</Link></div>
+          </section>
+        </div>
       </main>
-      <footer className="footer"><div className="container footer-inner"><div><strong>BC TRUCK WORKS</strong><span>© {new Date().getFullYear()} BC TRUCK WORKS. All rights reserved.</span></div><div className="footer-links"><Link href="/servers">Servers</Link><Link href="/vtc">VTC</Link><Link href="/dashboard/downloads">Downloads</Link><Link href="/support">Support</Link></div></div></footer>
-    </>
+    </div>
   );
 }
