@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="WORK" title="Earnings & Stats" description="Track delivery performance, distance, fuel, earnings, and driver statistics." items={["Trip Earnings","Career Earnings","Miles / KM","Fuel Cost","Delivery Count","Efficiency","Driver Stats"]}/>
