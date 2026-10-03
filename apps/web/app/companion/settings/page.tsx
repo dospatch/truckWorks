@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="SETUP" title="Settings" description="Manage simulator connection preferences, companion behavior, notifications, and account settings." items={["Telemetry Source","Polling Rate","Notifications","Discord","Voice Dispatcher","Appearance","Account"]}/>
