@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="WORK" title="Driver Journal" description="Keep notes and memorable moments from your ATS and ETS2 driving sessions." items={["New Entry","Trip Notes","Convoy Notes","Photos","Session Timeline","Saved Entries"]}/>
