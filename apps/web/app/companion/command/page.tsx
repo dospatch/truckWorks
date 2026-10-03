@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Command Center" description="Central controls for convoy coordination, alerts, announcements, and driver status." items={["Driver Status","Announcements","Alerts","Session Control","Command Log"]}/>
