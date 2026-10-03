@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 type T=Record<string,any>;
 const URL="http://127.0.0.1:25555/api/ets2/telemetry";
-function pick(d:T|null,paths:string[],f:any="—"){for(const p of paths){const v=p.split(".").reduce((o,k)=>o?.[k],d);if(v!==undefined&&v!==null&&v!=="")return v}return f}
+function pick(d:T|null,paths:string[],f:any="—"){for(const p of paths){const v=p.split(".").reduce((o:any,k)=>o?.[k],d as any);if(v!==undefined&&v!==null&&v!=="")return v}return f}
 function n(v:any){const x=Number(v);return Number.isFinite(x)?x:null}
 
 export default function ATSPage(){
