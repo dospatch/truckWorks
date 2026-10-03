@@ -26,7 +26,7 @@ const SETTINGS_KEY = "bc-truckworks-driver-settings";
 
 function pick(d: T | null, paths: string[], fallback: any = null) {
   for (const path of paths) {
-    const value = path.split(".").reduce((o, key) => o?.[key], d);
+    const value = path.split(".").reduce((o: any, key) => o?.[key], d as any);
     if (value !== undefined && value !== null && value !== "") return value;
   }
   return fallback;
