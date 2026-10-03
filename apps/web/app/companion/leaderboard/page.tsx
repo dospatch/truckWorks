@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Leaderboard" description="A dedicated space for driver, distance, delivery, and convoy statistics." items={["Drivers","Distance","Deliveries","Earnings","Efficiency","Convoy Activity"]}/>
