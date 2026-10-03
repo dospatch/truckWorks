@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="STREAM" title="Stream Studio" description="Prepare your ATS and ETS2 telemetry for livestream overlays, trip summaries, and creator workflows." items={["Live Overlay","Trip Card","Stream Status","Scene Tools","Viewer Info","Stream Notes"]}/>
