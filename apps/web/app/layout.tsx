@@ -5,6 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BC TRUCK WORKS",
   description: "The central platform for truck simulation servers, VTCs, licenses, downloads, and server management.",
+  icons: { icon: "/bc-truck-works-logo.webp" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
