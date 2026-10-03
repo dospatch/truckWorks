@@ -23,7 +23,7 @@ type Trip = {
 };
 
 const TELEMETRY_URL = "http://127.0.0.1:25555/api/ets2/telemetry";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const TRIP_KEY = "bc-truckworks-active-trip";
 const HISTORY_KEY = "bc-truckworks-trip-history";
 const SETTINGS_KEY = "bc-truckworks-driver-settings";
