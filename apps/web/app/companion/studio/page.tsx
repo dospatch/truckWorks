@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="SETUP" title="Dashboard Studio" description="Customize the companion dashboard layout and choose which telemetry cards appear first." items={["Dashboard Layout","Telemetry Cards","Compact Mode","Game Defaults","Driver View","Display Preferences"]}/>
