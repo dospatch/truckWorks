@@ -1,24 +1,14 @@
 const { REST, Routes } = require("discord.js");
 const config = require("./config");
 const setupCommand = require("./commands/setup");
+const statusCommand = require("./commands/status");
 
-if (!config.token) {
-  console.error("❌ DISCORD_TOKEN is missing from bot/.env");
+if (!config.token || !config.clientId || !config.guildId) {
+  console.error("❌ DISCORD_TOKEN, DISCORD_CLIENT_ID, and DISCORD_GUILD_ID are required in bot/.env");
   process.exit(1);
 }
 
-if (!config.clientId) {
-  console.error("❌ DISCORD_CLIENT_ID is missing from bot/.env");
-  process.exit(1);
-}
-
-if (!config.guildId) {
-  console.error("❌ DISCORD_GUILD_ID is missing from bot/.env");
-  process.exit(1);
-}
-
-const commands = [setupCommand.data.toJSON()];
-
+const commands = [setupCommand.data.toJSON(), statusCommand.data.toJSON()];
 const rest = new REST({ version: "10" }).setToken(config.token);
 
 (async () => {
@@ -26,16 +16,16 @@ const rest = new REST({ version: "10" }).setToken(config.token);
     console.log("========================================");
     console.log("   BC TRUCK WORKS COMMAND DEPLOYMENT");
     console.log("========================================");
-    console.log(`Application ID: ${config.clientId}`);
-    console.log(`Guild ID: ${config.guildId}`);
-    console.log(`Commands: ${commands.map((command) => "/" + command.name).join(", ")}`);
+    console.log("Application ID: " + config.clientId);
+    console.log("Guild ID: " + config.guildId);
+    console.log("Commands: " + commands.map((command) => "/" + command.name).join(", "));
 
     const result = await rest.put(
       Routes.applicationGuildCommands(config.clientId, config.guildId),
       { body: commands }
     );
 
-    console.log(`✅ Registered ${result.length} guild command(s).`);
+    console.log("✅ Registered " + result.length + " guild command(s).");
     console.log("========================================");
   } catch (error) {
     console.error("❌ Command deployment failed:");
