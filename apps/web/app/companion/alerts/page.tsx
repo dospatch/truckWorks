@@ -1,1 +1,5 @@
-import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="SETUP" title="Alerts & Discord" description="Configure desktop alerts, Discord trip summaries, notification thresholds, and driver warnings." items={["Speed Alerts","Fuel Alerts","Rest Alerts","Damage Alerts","Discord Summaries","Desktop Notifications","Alert History"]}/>
+import { CompanionModule } from "../../components/CompanionModule";
+
+export default function Page(){
+  return <CompanionModule eyebrow="SETUP" title="Alerts & Discord" description="Configure desktop alerts, Discord trip summaries, notification thresholds, and driver warnings." items={["Speed Alerts","Fuel Alerts","Rest Alerts","Damage Alerts","Discord Summaries","Desktop Notifications","Alert History"]} />;
+}
