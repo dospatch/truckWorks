@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Convoy Radar" description="Prepare a shared view for connected drivers and convoy activity." items={["Driver Locations","Online Drivers","Convoy Route","Nearby Drivers","Session Status"]}/>
