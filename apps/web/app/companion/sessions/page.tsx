@@ -1,0 +1,1 @@
+import { CompanionModule } from "../../components/CompanionModule"; export default function Page(){return <CompanionModule eyebrow="CONVOY" title="Sessions" description="Create, review, and organize your convoy sessions." items={["New Session","Upcoming","Active","Past Sessions","Participants","Session Settings"]}/>
