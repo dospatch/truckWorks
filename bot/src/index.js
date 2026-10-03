@@ -18,7 +18,8 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.DirectMessages
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildScheduledEvents
     ]
 });
 
@@ -44,7 +45,7 @@ function loadCommands(directory) {
 }
 loadCommands(commandsPath);
 
-client.once("clientReady", () => {
+client.once("clientReady", async () => {
     console.log("");
     console.log("========================================");
     console.log("       BC TRUCKING WORKS BOT");
@@ -53,6 +54,18 @@ client.once("clientReady", () => {
     console.log(`Servers: ${client.guilds.cache.size}`);
     console.log(`Commands: ${client.commands.size}`);
     console.log("========================================");
+    client.user.setPresence({ activities: [{ name: "BC TRUCK WORKS • ATS / ETS2", type: 0 }], status: "online" });
+    if (config.clientId && config.guildId) {
+        try {
+            const { REST, Routes } = require("discord.js");
+            const rest = new REST({ version: "10" }).setToken(config.token);
+            const commandData = [...client.commands.values()].map(command => command.data.toJSON());
+            await rest.put(Routes.applicationGuildCommands(config.clientId, config.guildId), { body: commandData });
+            console.log(`[COMMANDS] Synced ${commandData.length} guild command(s)`);
+        } catch (error) {
+            console.error("[COMMAND SYNC ERROR]", error);
+        }
+    }
 });
 
 client.on("guildMemberAdd", async member => {
