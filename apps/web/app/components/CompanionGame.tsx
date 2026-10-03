@@ -180,10 +180,11 @@ export function CompanionGame({ game }: { game: "ATS" | "ETS2" }) {
         speak("Route update received. Your destination is " + destination + ".");
       }
 
-      if (isLive && activeTrip && currentOdo !== null && last.current.odometer !== null) {
-        const deltaKm = currentOdo - last.current.odometer;
-        if (deltaKm > 0 && deltaKm < 1) {
-          setActiveTrip(trip => trip ? { ...trip, miles: trip.miles + deltaKm * 0.621371 } : trip);
+      const trip = activeTripRef.current;
+      if (isLive && trip && currentOdo !== null && trip.startOdometerKm !== null) {
+        const trackedMiles = Math.max(0, (currentOdo - trip.startOdometerKm) * 0.621371);
+        if (Math.abs(trackedMiles - trip.miles) > 0.01) {
+          setActiveTrip(current => current ? { ...current, miles: trackedMiles } : current);
         }
       }
 
@@ -235,35 +236,94 @@ export function CompanionGame({ game }: { game: "ATS" | "ETS2" }) {
     };
   }, [load, paused]);
 
-  const startTrip = () => {
+  const startTrip = async () => {
     if (!live) {
       speak("Start ATS or ETS2 first, then I can begin tracking the trip.");
       return;
     }
-    const trip: Trip = {
+    const localTrip: Trip = {
       id: crypto.randomUUID(),
       game,
       truck: values.truck,
       startedAt: Date.now(),
       miles: 0,
+      startOdometerKm: values.odometer,
       fuelStart: values.fuel,
       fuelEnd: values.fuel,
       cargo: String(values.cargo),
       route: String(values.source) + " → " + String(values.destination),
-      income: values.income
+      income: values.income,
+      persisted: false
     };
-    setActiveTrip(trip);
-    speak("Trip started. I’m tracking miles, fuel, speed and your delivery.");
+
+    if (API_URL) {
+      try {
+        const response = await fetch(API_URL + "/api/trips/start", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            game,
+            truckName: values.truck,
+            cargo: String(values.cargo),
+            routeName: String(values.source) + " → " + String(values.destination),
+            income: values.income || 0,
+            odometerKm: values.odometer,
+            fuel: values.fuel,
+            metadata: { source: "companion" }
+          })
+        });
+        if (response.ok) {
+          const body = await response.json();
+          setActiveTrip(fromApiTrip(body.trip));
+          speak("Trip started. Your miles are now being saved to BC TRUCK WORKS.");
+          return;
+        }
+      } catch {}
+    }
+
+    setActiveTrip(localTrip);
+    speak("Trip started locally. I’ll keep tracking until the API is available.");
   };
 
-  const stopTrip = () => {
-    if (!activeTrip) return;
-    const finished: Trip = { ...activeTrip, endedAt: Date.now(), fuelEnd: values.fuel };
+  const stopTrip = async () => {
+    const trip = activeTripRef.current;
+    if (!trip) return;
+
+    if (API_URL && trip.persisted) {
+      try {
+        const response = await fetch(API_URL + "/api/trips/end", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            odometerKm: values.odometer,
+            fuel: values.fuel,
+            cargo: String(values.cargo),
+            routeName: String(values.source) + " → " + String(values.destination),
+            income: values.income ?? undefined,
+            status: "completed",
+            metadata: { source: "companion" }
+          })
+        });
+        if (response.ok) {
+          const body = await response.json();
+          const finished = fromApiTrip(body.trip);
+          setHistory(current => [finished, ...current.filter(item => item.id !== finished.id)].slice(0, 50));
+          setActiveTrip(null);
+          await refreshTrips();
+          speak("Trip saved permanently. " + finished.miles.toFixed(1) + " miles logged.");
+          return;
+        }
+      } catch {}
+    }
+
+    const finished: Trip = { ...trip, endedAt: Date.now(), endOdometerKm: values.odometer, fuelEnd: values.fuel };
     const next = [finished, ...history].slice(0, 50);
     setHistory(next);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
     setActiveTrip(null);
-    speak("Trip saved. " + finished.miles.toFixed(1) + " miles logged.");
+    speak("Trip saved locally. " + finished.miles.toFixed(1) + " miles logged.");
   };
 
   const gameName = game === "ATS" ? "American Truck Simulator" : "Euro Truck Simulator 2";
