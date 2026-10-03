@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const config = require("../../config");
+const discordInvite = "https://discord.gg/DFQvShHj2T";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,6 +15,7 @@ module.exports = {
         { name: "🤖 Bot", value: "🟢 Online", inline: true },
         { name: "📡 Commands", value: String(interaction.client.commands.size), inline: true },
         { name: "🌐 Dashboard", value: config.websiteUrl, inline: false },
+        { name: "💬 Discord", value: discordInvite, inline: false },
         { name: "🚛 Games", value: "American Truck Simulator\nEuro Truck Simulator 2", inline: true },
         { name: "◎ Convoys", value: "Use /convoy for scheduled convoy events.", inline: true }
       )
