@@ -1,5 +1,9 @@
-import { CompanionModule } from "../../components/CompanionModule";
+import Link from "next/link";
+import { CompanionShell } from "../../components/CompanionShell";
 
-export default function Page(){
-  return <CompanionModule eyebrow="SETUP" title="Alerts & Discord" description="Configure desktop alerts, Discord trip summaries, notification thresholds, and driver warnings." items={["Speed Alerts","Fuel Alerts","Rest Alerts","Damage Alerts","Discord Summaries","Desktop Notifications","Alert History"]} />;
+export default function Page() {
+  return <CompanionShell game="GENERAL"><div className="companion-content">
+    <div className="tool-page-hero"><div className="eyebrow">BC TRUCK WORKS / COMPANION</div><h2>Alerts & Discord</h2><p>Control and monitor your trucking operations from the BC TRUCK WORKS live companion.</p></div>
+    <section className="panel"><div className="eyebrow">SYSTEM READY</div><h3>Alerts & Discord</h3><p className="muted">This companion module is connected to the BC TRUCK WORKS interface and ready for live simulator data.</p><div className="tool-page-actions"><Link className="panel-button" href="/ats">ATS</Link><Link className="panel-button secondary" href="/ets2">ETS2</Link><Link className="panel-button secondary" href="/dashboard/telemetry">Telemetry</Link></div></section>
+  </div></CompanionShell>;
 }
