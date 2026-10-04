@@ -1,18 +1,12 @@
 {
-  "dependencies": {
-    "@vercel/analytics": "^2.0.1"
-  },
-  "name": "truckworks",
-  "version": "1.0.4",
+  "name": "bc-truck-works",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "bot:install": "npm --prefix bot install",
-    "deploy": "npm --prefix bot run deploy",
-    "start": "npm --prefix bot start",
-    "dev": "npm --prefix bot run dev",
-    "changelog": "node scripts/update-changelog.js",
-    "update": "node scripts/update.js",
-    "changelog:discord": "node scripts/update-discord-changelog.js",
-    "changelog:update": "node scripts/update-changelog.js && node scripts/update-discord-changelog.js"
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2"
   }
 }
