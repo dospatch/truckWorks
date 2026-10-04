@@ -1,8 +1,8 @@
 {
-  "name": "bc-truck-works",
+  "name": "bc-truck-works-nexushost",
   "version": "2.0.1",
   "private": true,
-  "description": "BC TRUCK WORKS Discord Bot — NexusHost production package",
+  "description": "BC TRUCK WORKS Discord Bot - NexusHost deployment package",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
