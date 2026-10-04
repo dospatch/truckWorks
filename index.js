@@ -1,4 +1,14 @@
-const { Client, GatewayIntentBits, ActivityType, ChannelType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, REST, Routes } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  ActivityType,
+  ChannelType,
+  PermissionFlagsBits,
+  SlashCommandBuilder,
+  EmbedBuilder,
+  REST,
+  Routes
+} = require("discord.js");
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1556044045195935775";
@@ -40,7 +50,7 @@ function statusEmbed() {
       { name: "🌐 Website", value: WEBSITE_URL, inline: true },
       { name: "🛣️ Games", value: "ATS / ETS2", inline: true },
       { name: "📡 Telemetry", value: "Driver Agent architecture", inline: true },
-      { name: "⚙️ Version", value: "2.0.0", inline: true }
+      { name: "⚙️ Version", value: "2.0.1", inline: true }
     )
     .setTimestamp()
     .setFooter({ text: "BC TRUCK WORKS" });
@@ -52,7 +62,9 @@ async function updateStatus() {
     const channel = guild.channels.cache.find(c => c.name === "📊│bot-status" && c.type === ChannelType.GuildText);
     if (!channel) return;
     const old = await channel.messages.fetch({ limit: 20 });
-    for (const m of old.values()) if (m.author.id === client.user.id) await m.delete().catch(() => {});
+    for (const m of old.values()) {
+      if (m.author.id === client.user.id) await m.delete().catch(() => {});
+    }
     await channel.send({ embeds: [statusEmbed()] });
   } catch (e) {
     console.error("Status update:", e.message);
@@ -117,8 +129,16 @@ client.once("ready", async () => {
   console.log("Bot ID:", client.user.id);
   console.log("Server count:", client.guilds.cache.size);
   console.log("========================================");
-  client.user.setPresence({ activities: [{ name: "BC TRUCK WORKS • ATS / ETS2", type: ActivityType.Watching }], status: "online" });
-  try { await registerCommands(); await updateStatus(); } catch (e) { console.error("Startup:", e); }
+  client.user.setPresence({
+    activities: [{ name: "BC TRUCK WORKS • ATS / ETS2", type: ActivityType.Watching }],
+    status: "online"
+  });
+  try {
+    await registerCommands();
+    await updateStatus();
+  } catch (e) {
+    console.error("Startup:", e);
+  }
   setInterval(updateStatus, 300000);
   console.log("BC TRUCK WORKS BOT IS ONLINE");
 });
@@ -128,8 +148,28 @@ client.on("interactionCreate", async interaction => {
   try {
     if (interaction.commandName === "setup") return setup(interaction);
     if (interaction.commandName === "status") return interaction.reply({ embeds: [statusEmbed()] });
-    if (interaction.commandName === "truckworks") return interaction.reply({ embeds: [new EmbedBuilder().setTitle("🚛 BC TRUCK WORKS").setDescription("Trucking community and driver platform for ATS and ETS2.").addFields({ name: "🌐 Website", value: WEBSITE_URL }, { name: "🛣️ Games", value: "American Truck Simulator and Euro Truck Simulator 2" }).setTimestamp()] });
-    if (interaction.commandName === "telemetry") return interaction.reply({ embeds: [new EmbedBuilder().setTitle("📡 TELEMETRY").setDescription("Driver-side telemetry connects ATS / ETS2 data to BC TRUCK WORKS.").addFields({ name: "Endpoint", value: "http://127.0.0.1:25555/api/ets2/telemetry" }, { name: "Help", value: "Use #📡│telemetry-help or #🎫│support." }).setTimestamp()] });
+    if (interaction.commandName === "truckworks") {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("🚛 BC TRUCK WORKS")
+            .setDescription("Trucking community and driver platform for ATS and ETS2.")
+            .addFields({ name: "🌐 Website", value: WEBSITE_URL }, { name: "🛣️ Games", value: "American Truck Simulator and Euro Truck Simulator 2" })
+            .setTimestamp()
+        ]
+      });
+    }
+    if (interaction.commandName === "telemetry") {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("📡 TELEMETRY")
+            .setDescription("Driver-side telemetry connects ATS / ETS2 data to BC TRUCK WORKS.")
+            .addFields({ name: "Endpoint", value: "http://127.0.0.1:25555/api/ets2/telemetry" }, { name: "Help", value: "Use #📡│telemetry-help or #🎫│support." })
+            .setTimestamp()
+        ]
+      });
+    }
   } catch (e) {
     console.error("Interaction:", e);
     const r = { content: "❌ Something went wrong.", ephemeral: true };
@@ -140,4 +180,7 @@ client.on("interactionCreate", async interaction => {
 
 client.on("error", e => console.error("Discord error:", e));
 client.on("warn", e => console.warn("Discord warning:", e));
-client.login(TOKEN).catch(e => { console.error("Discord login failed:", e); process.exit(1); });
+client.login(TOKEN).catch(e => {
+  console.error("Discord login failed:", e);
+  process.exit(1);
+});

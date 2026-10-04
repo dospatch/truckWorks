@@ -1,21 +1,17 @@
-# BC TRUCK WORKS
+# BC TRUCK WORKS — NexusHost Bot
 
-Production-ready Discord bot for NexusHost.
+This branch is a clean, standalone NexusHost package for the Discord bot.
 
 ## NexusHost
+- Main file: index.js
+- Start command: npm start
+- Node: 20+
+- Dependency: discord.js
 
-- Runtime: Node.js 22+
-- Main file: `index.js`
-- Start command: `npm start` (equivalent to `node index.js`)
-- Dependencies: `package.json`
+## Required variables
+- DISCORD_TOKEN
+- DISCORD_CLIENT_ID=1556044045195935775
+- DISCORD_GUILD_ID=1546265801500266611
+- TRUCKWORKS_WEBSITE_URL=https://truck-works.vercel.app
 
-### Environment variables
-
-Set these in NexusHost Environment Variables. Never commit a real Discord token.
-
-- `DISCORD_TOKEN` — required
-- `DISCORD_CLIENT_ID` — `1556044045195935775`
-- `DISCORD_GUILD_ID` — `1546265801500266611`
-- `TRUCKWORKS_WEBSITE_URL` — `https://truck-works.vercel.app`
-
-The bot uses the repository root `index.js`. The legacy `bot/src` launcher is not part of the production bot package.
+Never commit the Discord token.
