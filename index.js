@@ -1,9 +1,9 @@
-const { Client, GatewayIntentBits, ActivityType, ChannelType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, REST, Routes } = require("discord.js");
+const { Client, GatewayIntentBits, ActivityType, ChannelType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, REST, Routes, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1556044045195935775";
 const GUILD_ID = process.env.DISCORD_GUILD_ID || "1546265801500266611";
-const WEBSITE_URL = process.env.TRUCKWORKS_WEBSITE_URL || "https://truck-works.vercel.app";
+const WEBSITE_URL = process.env.TRUCKWORKS_WEBSITE_URL || "https://bcttruckworks.vercel.app";
 
 if (!TOKEN) {
   console.error("DISCORD_TOKEN is missing.");
@@ -29,6 +29,27 @@ const messages = {
   "📡│telemetry": "# 📡 TELEMETRY\n\nTelemetry is collected on the driver's gaming PC through a telemetry provider and the BC TRUCK WORKS Driver Agent.\n\nExpected endpoint: http://127.0.0.1:25555/api/ets2/telemetry\n\nThe Discord bot cannot directly read ATS / ETS2 telemetry.",
   "📡│telemetry-help": "# 📡 TELEMETRY HELP\n\n1. Run ATS/ETS2.\n2. Run your telemetry provider.\n3. Run the Driver Agent.\n4. Check the local telemetry endpoint.\n5. Restart telemetry if needed.\n\nNeed help? Use #🎫│support."
 };
+
+
+function panelFor(name) {
+  const data = {
+    "👋│welcome": ["🚛 WELCOME TO BC TRUCK WORKS","**Serious Trucking. Connected Drivers.**\n\nWelcome to the official BC TRUCK WORKS community for ATS, ETS2, convoys, virtual trucking fleets, telemetry, and driver tracking.\n\n**🚦 GET STARTED**\n• 📜 Read the Community Guidelines\n• 👤 Open Driver Hub\n• 🖥️ Set up the Windows Connector\n• 📡 Connect ATS/ETS2 telemetry\n• 🚛 Join the community and convoys."],
+    "📢│announcements": ["📢 BC TRUCK WORKS ANNOUNCEMENTS","Official updates, releases, maintenance notices, community events, and major BC TRUCK WORKS news will be posted here.\n\n🔔 Turn on notifications to stay up to date."],
+    "👤│driver-hub": ["👤 BC DRIVER HUB","Your central trucking dashboard for driver statistics, trips, mileage, fleets, and supported live telemetry."],
+    "📡│telemetry": ["📡 BC TRUCK WORKS TELEMETRY","**01 • GAME** — Start ATS or ETS2.\n**02 • TELEMETRY** — Start a supported provider.\n**03 • CONNECTOR** — Start the BC TRUCK WORKS Windows Connector.\n**04 • DRIVER HUB** — Verify your connection.\n**05 • DRIVE** — Start trucking and let supported telemetry update your data."],
+    "🏢│fleets": ["🏢 BC TRUCK WORKS FLEETS","Build your trucking career with a virtual fleet. Drivers can build profiles and fleet owners can manage drivers, activity, trips, and progress."],
+    "🎫│support": ["🛠️ BC TRUCK WORKS SUPPORT","🆘 **General Support** — Driver Hub, accounts, community questions.\n🐛 **Bug Report** — Problems or unexpected behavior.\n📡 **Telemetry Help** — ATS/ETS2, Connector, mileage, or driver data.\n💻 **Technical Help** — Website, bot, installer, or setup."],
+    "📡│telemetry-help": ["📡 TELEMETRY HELP","**1.** Start ATS/ETS2.\n**2.** Start your telemetry provider.\n**3.** Start the BC TRUCK WORKS Connector.\n**4.** Confirm the Connector is online.\n**5.** Check Driver Hub for incoming data."],
+    "🐛│bug-reports": ["🐛 BUG REPORTS","Report the game, steps to reproduce, screenshots/logs, and what you expected to happen. Use Support to submit the issue."],
+    "💻│technical-help": ["💻 TECHNICAL HELP","Get help with the website, Windows Connector, installer, Discord bot, account access, or technical setup."],
+    "📜│community-guidelines": ["📜 BC TRUCK WORKS COMMUNITY GUIDELINES","**1️⃣ RESPECT** — Treat members, drivers, fleet owners, staff, and guests with respect.\n\n**2️⃣ DISCORD CONDUCT** — No spam, harassment, impersonation, disruptive behavior, or unauthorized advertising.\n\n**3️⃣ TRUCKING & ROLEPLAY** — Drive responsibly and respect convoy, fleet, and roleplay rules.\n\n**4️⃣ CHEATING & EXPLOITS** — Do not falsify telemetry, manipulate mileage, exploit bugs, or abuse platform systems.\n\n**5️⃣ ACCOUNT SECURITY** — Never share passwords, tokens, API keys, or private configuration information.\n\n**6️⃣ SUPPORT & REPORTS** — Use the correct support area and provide useful details. Do not submit knowingly false reports.\n\n**7️⃣ STAFF** — Follow reasonable staff instructions and use the proper appeal/report process for concerns.\n\n**8️⃣ ENFORCEMENT** — Violations may result in warnings, timeouts, kicks, bans, fleet restrictions, or platform restrictions.\n\n⚠️ Guidelines may be updated as BC TRUCK WORKS grows."]
+  };
+  const x=data[name]; if(!x) return null;
+  const e=new EmbedBuilder().setTitle(x[0]).setDescription(x[1]).setColor(0x1f2937).setFooter({text:"BC TRUCK WORKS • Serious trucking. Connected drivers."}).setTimestamp();
+  const links={ "👋│welcome":[["🌐 Driver Hub",WEBSITE_URL],["📜 Guidelines",WEBSITE_URL+"/community-guidelines"],["🎫 Support",WEBSITE_URL+"/support"]], "👤│driver-hub":[["🚛 Driver Hub",WEBSITE_URL]], "📡│telemetry":[["📚 Documentation",WEBSITE_URL+"/docs"],["🎫 Support",WEBSITE_URL+"/support"]], "🎫│support":[["🎫 Open Support",WEBSITE_URL+"/support"]], "📡│telemetry-help":[["🛠️ Support",WEBSITE_URL+"/support"]], "🐛│bug-reports":[["🐛 Report an Issue",WEBSITE_URL+"/support"]], "💻│technical-help":[["💻 Get Technical Help",WEBSITE_URL+"/support"]], "📜│community-guidelines":[["🎫 Support",WEBSITE_URL+"/support"],["🌐 Driver Hub",WEBSITE_URL]]};
+  if(links[name]) e.setURL(WEBSITE_URL);
+  const out={embeds:[e]}; if(links[name]) out.components=[new ActionRowBuilder().addComponents(links[name].map(b=>new ButtonBuilder().setLabel(b[0]).setStyle(ButtonStyle.Link).setURL(b[1])))]; return out;
+}
 
 function statusEmbed() {
   return new EmbedBuilder()
@@ -86,7 +107,7 @@ async function setup(interaction) {
         const type = voice ? ChannelType.GuildVoice : ChannelType.GuildText;
         const channel = await interaction.guild.channels.create({ name, type, parent: category.id });
         channels++;
-        if (type === ChannelType.GuildText && messages[name]) await channel.send(messages[name]);
+        if (type === ChannelType.GuildText) { const p = panelFor(name); if (p) await channel.send(p); else if (messages[name]) await channel.send(messages[name]); }
       }
     }
     await interaction.editReply("✅ BC TRUCK WORKS setup complete! Categories: " + categories + " | Channels: " + channels);
