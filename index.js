@@ -4,6 +4,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1556044045195935775";
 const GUILD_ID = process.env.DISCORD_GUILD_ID || "1546265801500266611";
 const WEBSITE_URL = process.env.TRUCKWORKS_WEBSITE_URL || "https://bcttruckworks.vercel.app";
+const COMMAND_BUILD = "2026-10-06-safe-setup-v3";
 
 if (!TOKEN) {
   console.error("DISCORD_TOKEN is missing.");
@@ -171,7 +172,8 @@ async function setup(interaction) {
 }
 
 const commands = [
-  new SlashCommandBuilder().setName("setup").setDescription("Add or update BC TRUCK WORKS Discord channels without deleting existing channels.").setDefaultMemberPermissions(PermissionFlagsBits.Administrator.toString()),
+  new SlashCommandBuilder().setName("setup").setDescription("SAFE: add or update channels without deleting existing channels.").setDefaultMemberPermissions(PermissionFlagsBits.Administrator.toString()),
+  new SlashCommandBuilder().setName("setup-v2").setDescription("SAFE SETUP V2: add/update channels without deleting anything.").setDefaultMemberPermissions(PermissionFlagsBits.Administrator.toString()),
   new SlashCommandBuilder().setName("status").setDescription("Show bot and server status."),
   new SlashCommandBuilder().setName("truckworks").setDescription("Show BC TRUCK WORKS information."),
   new SlashCommandBuilder().setName("telemetry").setDescription("Show ATS / ETS2 telemetry information.")
@@ -179,13 +181,17 @@ const commands = [
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN);
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
-  console.log("Registered 4 Discord slash commands.");
+  const route = Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID);
+  // Explicitly replace the guild command set so stale setup definitions cannot remain.
+  await rest.put(route, { body: [] });
+  await rest.put(route, { body: commands });
+  console.log("Registered fresh BC TRUCK WORKS slash commands. Build:", COMMAND_BUILD);
 }
 
 client.once("ready", async () => {
   console.log("========================================");
   console.log("BC TRUCK WORKS DISCORD BOT");
+  console.log("Command build:", COMMAND_BUILD);
   console.log("Logged in as:", client.user.tag);
   console.log("Bot ID:", client.user.id);
   console.log("Server count:", client.guilds.cache.size);
@@ -199,7 +205,7 @@ client.once("ready", async () => {
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
   try {
-    if (interaction.commandName === "setup") return setup(interaction);
+    if (interaction.commandName === "setup" || interaction.commandName === "setup-v2") return setup(interaction);
     if (interaction.commandName === "status") return interaction.reply({ embeds: [statusEmbed()] });
     if (interaction.commandName === "truckworks") return interaction.reply({ embeds: [new EmbedBuilder().setTitle("🚛 BC TRUCK WORKS").setDescription("Trucking community and driver platform for ATS and ETS2.").addFields({ name: "🌐 Website", value: WEBSITE_URL }, { name: "🛣️ Games", value: "American Truck Simulator and Euro Truck Simulator 2" }).setTimestamp()] });
     if (interaction.commandName === "telemetry") return interaction.reply({ embeds: [new EmbedBuilder().setTitle("📡 TELEMETRY").setDescription("Driver-side telemetry connects ATS / ETS2 data to BC TRUCK WORKS.").addFields({ name: "Endpoint", value: "http://127.0.0.1:25555/api/ets2/telemetry" }, { name: "Help", value: "Use #📡│telemetry-help or #🎫│support." }).setTimestamp()] });
