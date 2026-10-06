@@ -13,7 +13,7 @@ if (!TOKEN) {
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 const layout = [
-  ["🚛 BC TRUCK WORKS • START HERE", ["📢│announcements","📌│server-info","📊│bot-status","💡│suggestions"]],
+  ["🚛 BC TRUCK WORKS • START HERE", ["👋│welcome","📜│community-guidelines","📢│announcements","📌│server-info","📊│bot-status","💡│suggestions"]],
   ["💬 COMMUNITY", ["💬│general","🚛│truck-talk","📸│screenshots","🎥│streamers"]],
   ["🛣️ DRIVING • ATS / ETS2", ["🇺🇸│ats","🇪🇺│ets2","📡│telemetry","📏│miles-and-trips","⛽│fuel-and-rest","🧭│navigation"]],
   ["◎ CONVOYS", ["📅│convoy-events","🚦│convoy-lobby","📡│convoy-live","🗺️│convoy-routes","🏆│leaderboard"]],
