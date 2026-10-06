@@ -89,28 +89,80 @@ async function setup(interaction) {
   if (!me || !me.permissions.has(PermissionFlagsBits.ManageChannels)) return interaction.editReply("❌ I need Manage Channels permission.");
 
   try {
-    await interaction.editReply("🛠️ Rebuilding BC TRUCK WORKS...");
-    for (const c of [...interaction.guild.channels.cache.values()]) {
-      if (c.deletable && c.type !== ChannelType.GuildCategory) await c.delete("BC TRUCK WORKS rebuild");
-    }
-    for (const c of [...interaction.guild.channels.cache.values()]) {
-      if (c.deletable && c.type === ChannelType.GuildCategory) await c.delete("BC TRUCK WORKS rebuild");
-    }
+    await interaction.editReply("🛠️ Adding/updating BC TRUCK WORKS channels...");
 
-    let categories = 0;
-    let channels = 0;
+    let categoriesCreated = 0;
+    let channelsCreated = 0;
+    let channelsUpdated = 0;
+
     for (const [categoryName, channelNames] of layout) {
-      const category = await interaction.guild.channels.create({ name: categoryName, type: ChannelType.GuildCategory });
-      categories++;
+      let category = interaction.guild.channels.cache.find(
+        c => c.type === ChannelType.GuildCategory && c.name === categoryName
+      );
+
+      if (!category) {
+        category = await interaction.guild.channels.create({
+          name: categoryName,
+          type: ChannelType.GuildCategory,
+          reason: "BC TRUCK WORKS add/update setup"
+        });
+        categoriesCreated++;
+      }
+
       for (const name of channelNames) {
         const voice = ["🚛│Truckers","◎│Convoy 1","◎│Convoy 2","🎙️│Driver Lounge","🔊│Dispatch"].includes(name);
         const type = voice ? ChannelType.GuildVoice : ChannelType.GuildText;
-        const channel = await interaction.guild.channels.create({ name, type, parent: category.id });
-        channels++;
-        if (type === ChannelType.GuildText) { const p = panelFor(name); if (p) await channel.send(p); else if (messages[name]) await channel.send(messages[name]); }
+
+        let channel = interaction.guild.channels.cache.find(
+          c => c.name === name && c.type === type
+        );
+
+        if (!channel) {
+          channel = await interaction.guild.channels.create({
+            name,
+            type,
+            parent: category.id,
+            reason: "BC TRUCK WORKS add/update setup"
+          });
+          channelsCreated++;
+        } else {
+          if (channel.parentId !== category.id && channel.manageable) {
+            await channel.setParent(category.id, { lockPermissions: false, reason: "BC TRUCK WORKS add/update setup" });
+            channelsUpdated++;
+          }
+        }
+
+        if (type === ChannelType.GuildText) {
+          const p = panelFor(name);
+          if (p) {
+            const recent = await channel.messages.fetch({ limit: 25 }).catch(() => new Map());
+            const botMessages = [...recent.values()].filter(m => m.author.id === client.user.id);
+
+            if (botMessages.length === 0) {
+              await channel.send(p);
+              channelsUpdated++;
+            }
+          } else if (messages[name]) {
+            const recent = await channel.messages.fetch({ limit: 25 }).catch(() => new Map());
+            const botMessages = [...recent.values()].filter(m => m.author.id === client.user.id);
+
+            if (botMessages.length === 0) {
+              await channel.send(messages[name]);
+              channelsUpdated++;
+            }
+          }
+        }
       }
     }
-    await interaction.editReply("✅ BC TRUCK WORKS setup complete! Categories: " + categories + " | Channels: " + channels);
+
+    await interaction.editReply(
+      "✅ BC TRUCK WORKS Add/Update complete!\n" +
+      "📁 Categories created: " + categoriesCreated + "\n" +
+      "💬 Channels created: " + channelsCreated + "\n" +
+      "🔄 Channels/panels updated: " + channelsUpdated + "\n\n" +
+      "🛡️ Existing channels were NOT deleted."
+    );
+
     setTimeout(updateStatus, 3000);
   } catch (e) {
     console.error("SETUP ERROR:", e);
@@ -119,7 +171,7 @@ async function setup(interaction) {
 }
 
 const commands = [
-  new SlashCommandBuilder().setName("setup").setDescription("Build or rebuild the BC TRUCK WORKS Discord server.").setDefaultMemberPermissions(PermissionFlagsBits.Administrator.toString()),
+  new SlashCommandBuilder().setName("setup").setDescription("Add or update BC TRUCK WORKS Discord channels without deleting existing channels.").setDefaultMemberPermissions(PermissionFlagsBits.Administrator.toString()),
   new SlashCommandBuilder().setName("status").setDescription("Show bot and server status."),
   new SlashCommandBuilder().setName("truckworks").setDescription("Show BC TRUCK WORKS information."),
   new SlashCommandBuilder().setName("telemetry").setDescription("Show ATS / ETS2 telemetry information.")
