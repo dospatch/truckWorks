@@ -1,10 +1,12 @@
 const { Client, GatewayIntentBits, ActivityType, ChannelType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, REST, Routes, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
+const { organize: organizePermissions } = require("./discordPermissions");
+
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1556044045195935775";
 const GUILD_ID = process.env.DISCORD_GUILD_ID || "1546265801500266611";
 const WEBSITE_URL = process.env.TRUCKWORKS_WEBSITE_URL || "https://bcttruckworks.vercel.app";
-const COMMAND_BUILD = "2026-10-06-safe-setup-v3";
+const COMMAND_BUILD = "2026-10-06-organized-permissions-v1";
 
 if (!TOKEN) {
   console.error("DISCORD_TOKEN is missing.");
@@ -158,12 +160,15 @@ async function setup(interaction) {
       }
     }
 
+    await organizePermissions(interaction.guild, layout);
+
     await interaction.editReply(
       "✅ BC TRUCK WORKS Add/Update complete!\n" +
       "📁 Categories created: " + categoriesCreated + "\n" +
       "💬 Channels created: " + channelsCreated + "\n" +
       "🔄 Channels/panels updated: " + channelsUpdated + "\n\n" +
-      "🛡️ Existing channels were NOT deleted."
+      "🛡️ Existing channels were NOT deleted.\n" +
+      "🔐 Categories, channel order, and permissions organized."
     );
 
     setTimeout(updateStatus, 3000);
