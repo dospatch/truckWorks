@@ -97,12 +97,12 @@ async function sendMemberWelcome(member) {
       .setColor(0x168cff)
       .setTitle("🚛 Welcome to BC TRUCK WORKS!")
       .setDescription(
-        "👋 Welcome " + member + "!\\n\\n" +
-        "We're glad you're here. You're now part of the BC TRUCK WORKS trucking community for **ATS, ETS2, convoys, VTCs, telemetry, and driver progression**.\\n\\n" +
-        "📜 **Start here:** Read the Community Guidelines.\\n" +
-        "👤 **Set up:** Visit Driver Hub and complete your driver profile.\\n" +
-        "🚛 **Get involved:** Join truck talk, convoys, and the community.\\n" +
-        "🆘 **Need help?** Use Support and we'll help you get rolling.\\n\\n" +
+        "👋 Welcome " + member + "!\n\n" +
+        "We're glad you're here. You're now part of the BC TRUCK WORKS trucking community for **ATS, ETS2, convoys, VTCs, telemetry, and driver progression**.\n\n" +
+        "📜 **Start here:** Read the Community Guidelines.\n" +
+        "👤 **Set up:** Visit Driver Hub and complete your driver profile.\n" +
+        "🚛 **Get involved:** Join truck talk, convoys, and the community.\n" +
+        "🆘 **Need help?** Use Support and we'll help you get rolling.\n\n" +
         "🛣️ **Welcome aboard, driver. Let's hit the road!**"
       )
       .setThumbnail(member.user.displayAvatarURL({ extension: "png", size: 256 }))
@@ -239,7 +239,9 @@ client.once("ready", async () => {
   console.log("BC TRUCK WORKS BOT IS ONLINE");
 });
 
-client.on("guildMemberAdd", sendMemberWelcome);\n\nclient.on("interactionCreate", async interaction => {
+client.on("guildMemberAdd", sendMemberWelcome);
+
+client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return;
   try {
     if (interaction.commandName === "setup" || interaction.commandName === "setup-v2") return setup(interaction);
